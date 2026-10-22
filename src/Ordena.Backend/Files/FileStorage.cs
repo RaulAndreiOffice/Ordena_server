@@ -1,0 +1,152 @@
+using Ordena.Backend.Results;
+
+namespace Ordena.Backend.Files;
+
+internal sealed class FileStorage : IFileStorage
+{
+    // 8 attempts with 100, 200, … 700 ms between them: about 2.8 s before giving up.
+    private const int Attempts = 8;
+
+    // Windows error codes, in the low 16 bits of IOException.HResult.
+    private const int ErrorSharingViolation = 32;
+    private const int ErrorLockViolation = 33;
+    private const int ErrorFileExists = 80;
+    private const int ErrorAlreadyExists = 183;
+
+    private readonly TimeSpan _retryDelay;
+
+    public FileStorage() : this(TimeSpan.FromMilliseconds(100)) { }
+
+    // Tests pass a short delay. Internal, so DI only sees the parameterless constructor.
+    internal FileStorage(TimeSpan retryDelay) => _retryDelay = retryDelay;
+
+    public async Task<Result<byte[]>> ReadAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            var content = await RetryWhileLockedAsync(() => File.ReadAllBytesAsync(path, ct), ct).ConfigureAwait(false);
+            return Result.Ok(content);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or DriveNotFoundException)
+        {
+            return Result.Fail<byte[]>(ErrorCode.FileMissing, path);
+        }
+        catch (IOException ex) when (IsLocked(ex))
+        {
+            return Result.Fail<byte[]>(ErrorCode.FileLocked, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Result.Fail<byte[]>(ErrorCode.IoError, ex.Message);
+        }
+    }
+
+    public async Task<Result> WriteVerifiedAsync(
+        string targetPath, ReadOnlyMemory<byte> content, string sha256, CancellationToken ct)
+    {
+        // A fixed name next to the target, so startup recovery knows what to clean up.
+        var tmpPath = targetPath + ".tmp";
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+
+            // FileMode.Create also replaces a tmp file left behind by a crash.
+            await using (var stream = new FileStream(
+                tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
+            {
+                await stream.WriteAsync(content, ct).ConfigureAwait(false);
+                // On the disk, not just in the cache, before the database says the move is done.
+                stream.Flush(flushToDisk: true);
+            }
+
+            if (Sha256Hasher.ComputeFile(tmpPath) != sha256)
+            {
+                DeleteQuietly(tmpPath);
+                return Result.Fail(ErrorCode.IoError, $"The copy written to '{tmpPath}' doesn't match the original.");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            DeleteQuietly(tmpPath);
+            return Result.Fail(ErrorCode.IoError, ex.Message);
+        }
+
+        try
+        {
+            // An antivirus scanning the new file can hold it for a moment, hence the retry.
+            await RetryWhileLockedAsync(() =>
+            {
+                File.Move(tmpPath, targetPath, overwrite: false);
+                return Task.FromResult(true);
+            }, ct).ConfigureAwait(false);
+            return Result.Ok();
+        }
+        catch (IOException ex) when (LowWord(ex) is ErrorFileExists or ErrorAlreadyExists)
+        {
+            DeleteQuietly(tmpPath);
+            return Result.Fail(ErrorCode.TargetExists, targetPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            DeleteQuietly(tmpPath);
+            return Result.Fail(ErrorCode.IoError, ex.Message);
+        }
+    }
+
+    public async Task<bool> TryDeleteAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            // File.Delete doesn't throw for a missing file, only for a missing folder.
+            return await RetryWhileLockedAsync(() =>
+            {
+                File.Delete(path);
+                return Task.FromResult(true);
+            }, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is DirectoryNotFoundException or DriveNotFoundException)
+        {
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    public bool FileExists(string path) => File.Exists(path);
+
+    public bool DirectoryExists(string path) => Directory.Exists(path);
+
+    // Runs the action again while another program has the file open. The last lock error is rethrown.
+    private async Task<T> RetryWhileLockedAsync<T>(Func<Task<T>> action, CancellationToken ct)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await action().ConfigureAwait(false);
+            }
+            catch (IOException ex) when (IsLocked(ex) && attempt < Attempts)
+            {
+            }
+
+            await Task.Delay(_retryDelay * attempt, ct).ConfigureAwait(false);
+        }
+    }
+
+    private static bool IsLocked(IOException ex) => LowWord(ex) is ErrorSharingViolation or ErrorLockViolation;
+
+    private static int LowWord(IOException ex) => ex.HResult & 0xFFFF;
+
+    private static void DeleteQuietly(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+}

@@ -1,12 +1,14 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Ordena.Backend.Data;
+using Ordena.Backend.Repositories;
 
 namespace Ordena.Tests.TestSupport;
 
 // A fresh SQLite database in memory, built by the real migrations.
 // It lives as long as the connection stays open, so every test gets an empty one.
-internal sealed class SqliteTestDatabase : IDisposable
+// It is also the DbContext factory, so tests use the real UnitOfWorkFactory on top of it.
+internal sealed class SqliteTestDatabase : IDbContextFactory<AppDbContext>, IDisposable
 {
     private readonly DbContextOptions<AppDbContext> _options;
 
@@ -24,6 +26,10 @@ internal sealed class SqliteTestDatabase : IDisposable
 
     // A new context each time, so EF's identity cache can't hide what is really stored.
     public AppDbContext CreateContext() => new(_options);
+
+    AppDbContext IDbContextFactory<AppDbContext>.CreateDbContext() => CreateContext();
+
+    public IUnitOfWorkFactory UnitOfWorkFactory => new UnitOfWorkFactory(this);
 
     public T Save<T>(T entity) where T : class
     {
