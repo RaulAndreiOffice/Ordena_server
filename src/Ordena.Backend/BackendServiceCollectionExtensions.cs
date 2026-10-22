@@ -19,8 +19,12 @@ public static class BackendServiceCollectionExtensions
         var paths = new AppPaths(appDataFolder ?? AppPaths.DefaultRoot);
         var connectionString = new SqliteConnectionStringBuilder { DataSource = paths.Database }.ToString();
 
+        // The Frontend's host adds Serilog on top; this makes ILogger<T> available without it, as in tests.
+        services.AddLogging();
+
         services.AddSingleton<IAppPaths>(paths);
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<SqliteBackup>();
 
         services.AddDbContextFactory<AppDbContext>(options => options
             .UseSqlite(connectionString)
@@ -30,11 +34,16 @@ public static class BackendServiceCollectionExtensions
         services.AddSingleton<IFileStorage, FileStorage>();
         services.AddSingleton<PartnerResolver>();
         services.AddSingleton<ArchiveMover>();
+        services.AddSingleton<JournalRecovery>();
+        services.AddSingleton<ArchiveCheck>();
+        services.AddSingleton<IndexRebuild>();
 
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IPartnerService, PartnerService>();
         services.AddSingleton<ISearchService, SearchService>();
         services.AddSingleton<IImportService, ImportService>();
+        services.AddSingleton<IDocumentService, DocumentService>();
+        services.AddSingleton<IArchiveService, ArchiveService>();
         services.AddSingleton<IMaintenanceService, MaintenanceService>();
 
         return services;

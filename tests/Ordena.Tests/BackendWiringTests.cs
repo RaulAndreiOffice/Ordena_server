@@ -68,9 +68,13 @@ public sealed class BackendWiringTests : IDisposable
 
         var result = await provider.GetRequiredService<ISearchService>().SearchAsync(new SearchQuery(), Ct);
         var suggestions = await provider.GetRequiredService<IPartnerService>().SuggestAsync("telef", 10, Ct);
+        var trash = await provider.GetRequiredService<IDocumentService>().ListTrashAsync(Ct);
+        var rebuild = await provider.GetRequiredService<IArchiveService>().RebuildIndexAsync(_folder, null, Ct);
 
         Assert.Empty(result.Items);
         Assert.Empty(suggestions);
+        Assert.Empty(trash);
+        Assert.Equal(0, rebuild.Value.DocumentCount);
     }
 
     // The backend half of step 2's "done when": dropped PDFs end up correctly named in their
@@ -106,18 +110,27 @@ public sealed class BackendWiringTests : IDisposable
             Assert.True(result.IsSuccess, $"{invoice.Partner}: {result.Error}");
         }
 
-        Assert.Equal(
+        string[] filed =
         [
             "2026/1T/Recibidas/Repsol/2026-03-20_Repsol_T-88812_Ticket.pdf",
             "2026/1T/Recibidas/Telefonica-Espana/2026-03-14_Telefonica-Espana_A-2026-0123.pdf",
             "2026/2T/Recibidas/Iberdrola-Clientes/2026-04-02_Iberdrola-Clientes_21-0042_Rectif.pdf",
             "2026/3T/Emitidas/Cliente-Ejemplo/2026-07-03_Cliente-Ejemplo_F-2026-007.pdf",
             "2026/4T/Recibidas/Gestoria-Lopez/2026-12-31_Gestoria-Lopez_R-15_Recibo.pdf",
-        ], archive.Files());
+        ];
+        Assert.Equal(filed, archive.Files());
         Assert.Empty(downloads.Files());
 
-        var all = await provider.GetRequiredService<ISearchService>().SearchAsync(new SearchQuery(), Ct);
-        Assert.Equal(5, all.TotalCount);
+        var search = provider.GetRequiredService<ISearchService>();
+        Assert.Equal(5, (await search.SearchAsync(new SearchQuery(), Ct)).TotalCount);
+
+        // Deleted to _Papelera and restored: the file goes there and comes back to the same place.
+        var documents = provider.GetRequiredService<IDocumentService>();
+        var repsol = Assert.Single((await search.SearchAsync(new SearchQuery { Text = "repsol" }, Ct)).Items);
+        Assert.True((await documents.DeleteAsync(repsol.Id, Ct)).IsSuccess);
+        Assert.Contains("_Papelera/" + filed[0], archive.Files());
+        Assert.True((await documents.RestoreAsync(repsol.Id, Ct)).IsSuccess);
+        Assert.Equal(filed, archive.Files());
     }
 
     // Like the app: build the container (checking every registration), then run the startup step.

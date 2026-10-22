@@ -45,11 +45,10 @@ internal sealed class ImportService(
 
         await using var uow = uowFactory.Create();
 
-        var settings = await uow.Settings.GetAllAsync(ct).ConfigureAwait(false);
-        var archiveRoot = settings.GetValueOrDefault(SettingKeys.ArchiveRoot)
-            ?? throw new InvalidOperationException("The archive root is not set. First run sets it before any import.");
-        if (!storage.DirectoryExists(archiveRoot))
-            return Fail(ErrorCode.ArchiveUnavailable, archiveRoot);
+        var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
+        if (!root.IsSuccess)
+            return Fail(root.Error.Value, root.Detail);
+        var archiveRoot = root.Value;
 
         // Deleted documents count too: a file already in _Papelera is restored, not imported again.
         var existing = await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false);
@@ -93,10 +92,7 @@ internal sealed class ImportService(
         // The import is committed, so this step is no longer cancellable.
         var sourceDeleted = await storage.TryDeleteAsync(request.SourcePath, CancellationToken.None).ConfigureAwait(false);
 
-        var item = new DocumentListItem(
-            document.Id, document.IssueDate, partner.Value.Name, document.DocNumber,
-            document.Type, document.Direction, document.RelativePath);
-        return Result.Ok(new ImportResult(item, sourceDeleted));
+        return Result.Ok(new ImportResult(document.ToListItem(), sourceDeleted));
     }
 
     private static Result<ImportResult> Fail(ErrorCode error, string? detail) =>

@@ -20,10 +20,15 @@ internal sealed class TempFolder : IDisposable
     }
 
     // Every file under the folder, relative and with "/", sorted, for exact asserts.
-    public string[] Files() => Directory.GetFiles(Root, "*", SearchOption.AllDirectories)
-        .Select(f => System.IO.Path.GetRelativePath(Root, f).Replace('\\', '/'))
-        .Order(StringComparer.Ordinal)
-        .ToArray();
+    public string[] Files() => FilesUnder(Root);
+
+    // The same for any folder; empty when it doesn't exist.
+    public static string[] FilesUnder(string folder) => !Directory.Exists(folder)
+        ? []
+        : Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+            .Select(f => System.IO.Path.GetRelativePath(folder, f).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 
     public void Dispose()
     {

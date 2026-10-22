@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Ordena.Backend.Dtos;
 using Ordena.Backend.Files;
 using Ordena.Backend.Models;
@@ -27,7 +28,8 @@ public sealed class ImportServiceTests : IDisposable
         var clock = new FixedClock(Now);
         var storage = new FileStorage(TimeSpan.FromMilliseconds(1));
         _import = new ImportService(
-            _db.UnitOfWorkFactory, storage, new PartnerResolver(clock), new ArchiveMover(storage, clock), clock);
+            _db.UnitOfWorkFactory, storage, new PartnerResolver(clock),
+            new ArchiveMover(storage, clock, NullLogger<ArchiveMover>.Instance), clock);
         _db.Save(new AppSetting { Key = "ArchiveRoot", Value = _archive.Root });
     }
 

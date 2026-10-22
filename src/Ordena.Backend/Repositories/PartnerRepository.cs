@@ -28,6 +28,8 @@ internal sealed class PartnerRepository(AppDbContext db) : IPartnerRepository
         db.Partners.Local.Any(p => string.Equals(p.FolderName, folderName, StringComparison.OrdinalIgnoreCase))
         || await db.Partners.AnyAsync(p => p.FolderName == folderName, ct).ConfigureAwait(false);
 
+    public Task<bool> AnyAsync(CancellationToken ct) => db.Partners.AnyAsync(ct);
+
     public void Add(Partner partner) => db.Partners.Add(partner);
 
     public void Remove(Partner partner) => db.Partners.Remove(partner);

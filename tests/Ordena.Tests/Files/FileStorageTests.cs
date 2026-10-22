@@ -130,6 +130,96 @@ public sealed class FileStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task Move_creates_the_folders_and_moves_the_file()
+    {
+        var content = TestPdf.Bytes("move");
+        var from = _folder.WriteFile("2026/1T/a.pdf", content);
+
+        var result = await _storage.MoveAsync(from, _folder.Path("2026", "2T", "b.pdf"), Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["2026/2T/b.pdf"], _folder.Files());
+        Assert.Equal(content, File.ReadAllBytes(_folder.Path("2026", "2T", "b.pdf")));
+    }
+
+    [Fact]
+    public async Task Move_of_a_missing_file_fails_with_FileMissing()
+    {
+        var result = await _storage.MoveAsync(_folder.Path("gone.pdf"), _folder.Path("b.pdf"), Ct);
+
+        Assert.Equal(ErrorCode.FileMissing, result.Error);
+    }
+
+    [Fact]
+    public async Task Move_never_overwrites_an_existing_file()
+    {
+        var from = _folder.WriteFile("a.pdf", TestPdf.Bytes("a"));
+        var to = _folder.WriteFile("b.pdf", TestPdf.Bytes("b"));
+
+        var result = await _storage.MoveAsync(from, to, Ct);
+
+        Assert.Equal(ErrorCode.TargetExists, result.Error);
+        Assert.Equal(TestPdf.Bytes("a"), File.ReadAllBytes(from));
+        Assert.Equal(TestPdf.Bytes("b"), File.ReadAllBytes(to));
+    }
+
+    [Fact]
+    public async Task Move_of_a_file_open_in_another_program_fails_with_FileLocked()
+    {
+        var from = _folder.WriteFile("a.pdf", TestPdf.Bytes("open"));
+        using var viewer = File.Open(from, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        var result = await _storage.MoveAsync(from, _folder.Path("b.pdf"), Ct);
+
+        Assert.Equal(ErrorCode.FileLocked, result.Error);
+        Assert.Equal(["a.pdf"], _folder.Files());
+    }
+
+    [Fact]
+    public async Task Move_can_change_only_the_case_of_the_name()
+    {
+        var from = _folder.WriteFile("x_a-1.pdf", TestPdf.Bytes("case"));
+
+        var result = await _storage.MoveAsync(from, _folder.Path("x_A-1.pdf"), Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["x_A-1.pdf"], _folder.Files());
+    }
+
+    [Fact]
+    public void TryDeleteEmptyFolders_stops_at_the_first_folder_still_in_use()
+    {
+        _folder.WriteFile("2026/1T/Recibidas/Other/keep.pdf", [1]);
+        Directory.CreateDirectory(_folder.Path("2026", "1T", "Recibidas", "Repsol"));
+
+        _storage.TryDeleteEmptyFolders(_folder.Path("2026", "1T", "Recibidas", "Repsol"), _folder.Root);
+
+        Assert.False(Directory.Exists(_folder.Path("2026", "1T", "Recibidas", "Repsol")));
+        Assert.Equal(["2026/1T/Recibidas/Other/keep.pdf"], _folder.Files());
+    }
+
+    [Fact]
+    public void TryDeleteEmptyFolders_never_removes_the_root()
+    {
+        Directory.CreateDirectory(_folder.Path("2026", "1T"));
+
+        _storage.TryDeleteEmptyFolders(_folder.Path("2026", "1T"), _folder.Root);
+
+        Assert.False(Directory.Exists(_folder.Path("2026")));
+        Assert.True(Directory.Exists(_folder.Root));
+    }
+
+    [Fact]
+    public void Free_space_and_length_come_from_the_disk()
+    {
+        var path = _folder.WriteFile("a.pdf", [1, 2, 3]);
+
+        Assert.True(_storage.AvailableFreeSpace(_folder.Root) > 0);
+        Assert.Null(_storage.AvailableFreeSpace(@"\\server\share\Facturas")); // a network share can't tell
+        Assert.Equal(3, _storage.GetLength(path));
+    }
+
+    [Fact]
     public async Task TryDelete_removes_the_file()
     {
         var path = _folder.WriteFile("a.pdf", TestPdf.Bytes("delete"));

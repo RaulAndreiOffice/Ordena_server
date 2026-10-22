@@ -98,6 +98,92 @@ public sealed class ArchiveNamingTests
     }
 
     [Fact]
+    public void The_values_overload_gives_the_same_path()
+    {
+        var document = Doc("R-15", "2026-12-31", DocType.Recibo, Direction.Emitida);
+
+        Assert.Equal(
+            ArchiveNaming.BuildRelativePath(document, Telefonica),
+            ArchiveNaming.BuildRelativePath(
+                document.IssueDate, document.Direction, document.Type, document.DocNumber, Telefonica.FolderName));
+    }
+
+    [Fact]
+    public void ToTrash_keeps_the_folders_under_Papelera()
+    {
+        Assert.Equal(
+            "_Papelera/2026/1T/Recibidas/Repsol/a.pdf",
+            ArchiveNaming.ToTrash("2026/1T/Recibidas/Repsol/a.pdf"));
+    }
+
+    public static TheoryData<DocType> AllTypes => new(Enum.GetValues<DocType>());
+
+    [Theory]
+    [MemberData(nameof(AllTypes))]
+    public void TryParse_reads_back_what_BuildRelativePath_wrote(DocType type)
+    {
+        var path = ArchiveNaming.BuildRelativePath(Doc("A-2026/0123", "2026-05-02", type, Direction.Emitida), Telefonica);
+
+        Assert.Equal(
+            new ArchivePath(new DateOnly(2026, 5, 2), Direction.Emitida, type, "Telefonica-Espana", "A-2026-0123", InTrash: false),
+            ArchiveNaming.TryParse(path));
+    }
+
+    [Theory]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_T-88812_Ticket_2.pdf", "T-88812", DocType.FacturaSimplificada, false)]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_T-88812_2.pdf", "T-88812", DocType.Factura, false)]
+    [InlineData("_Papelera/2026/1T/Recibidas/Repsol/2026-03-20_Repsol_T-88812.pdf", "T-88812", DocType.Factura, true)]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol.pdf", "", DocType.Factura, false)]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_Ticket.pdf", "", DocType.FacturaSimplificada, false)]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_123.pdf", "123", DocType.Factura, false)]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_123_4.pdf", "123", DocType.Factura, false)]
+    public void TryParse_reads_copy_numbers_the_trash_and_missing_parts(
+        string path, string number, DocType type, bool inTrash)
+    {
+        var parsed = ArchiveNaming.TryParse(path);
+
+        Assert.Equal((number, type, inTrash, "Repsol"), (parsed?.DocNumber, parsed?.Type, parsed?.InTrash, parsed?.PartnerFolder));
+    }
+
+    [Theory]
+    [InlineData("2026/2T/Recibidas/Repsol/2026-03-20_Repsol_1.pdf")] // quarter folder doesn't match the date
+    [InlineData("2025/1T/Recibidas/Repsol/2026-03-20_Repsol_1.pdf")] // year folder doesn't match
+    [InlineData("2026/1T/Pagadas/Repsol/2026-03-20_Repsol_1.pdf")] // unknown direction
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Cepsa_1.pdf")] // another partner in the name
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_RepsolX_1.pdf")]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-02-30_Repsol_1.pdf")] // no such date
+    [InlineData("2026/1T/Recibidas/Repsol/20-03-2026_Repsol_1.pdf")]
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_1.docx")]
+    [InlineData("2026/1T/Repsol/2026-03-20_Repsol_1.pdf")] // a folder missing
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_A-1_B-2.pdf")] // two numbers
+    [InlineData("2026/1T/Recibidas/Repsol/2026-03-20_Repsol_A-1__2.pdf")]
+    [InlineData("escaneo.pdf")]
+    public void TryParse_rejects_paths_the_app_would_not_write(string path)
+    {
+        Assert.Null(ArchiveNaming.TryParse(path));
+    }
+
+    [Theory]
+    [InlineData(@"D:\Facturas", @"D:\Facturas", true)]
+    [InlineData(@"D:\Facturas", @"D:\facturas\", true)]
+    [InlineData(@"D:\Facturas", @"D:\Facturas\2026", true)]
+    [InlineData(@"D:\Facturas\2026", @"D:\Facturas", true)]
+    [InlineData(@"E:\", @"E:\Facturas", true)]
+    [InlineData(@"D:\Facturas", @"D:\Facturas-nuevas", false)]
+    [InlineData(@"D:\Facturas", @"E:\Facturas", false)]
+    public void AreNested(string folder, string otherFolder, bool expected)
+    {
+        Assert.Equal(expected, ArchiveNaming.AreNested(folder, otherFolder));
+    }
+
+    [Fact]
+    public void IsInArchive_works_for_a_whole_disk_and_not_for_a_sibling_folder()
+    {
+        Assert.True(ArchiveNaming.IsInArchive(@"E:\", @"E:\2026\a.pdf"));
+        Assert.False(ArchiveNaming.IsInArchive(@"D:\Facturas", @"D:\Facturas-nuevas\a.pdf"));
+    }
+
+    [Fact]
     public void ToFullPath_uses_Windows_separators()
     {
         Assert.Equal(

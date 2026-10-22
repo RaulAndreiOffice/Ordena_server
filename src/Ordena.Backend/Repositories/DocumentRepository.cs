@@ -24,10 +24,22 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
     public Task<bool> RelativePathExistsAsync(string relativePath, CancellationToken ct) =>
         db.Documents.AnyAsync(d => d.RelativePath == relativePath, ct);
 
-    public async Task<IReadOnlyList<Document>> ListActiveAsync(CancellationToken ct) =>
+    public async Task<IReadOnlyList<Document>> ListAllAsync(CancellationToken ct) =>
         await db.Documents.AsNoTracking()
-            .Where(d => d.DeletedAt == null)
+            .Include(d => d.Partner)
             .OrderBy(d => d.Id)
+            .ToListAsync(ct).ConfigureAwait(false);
+
+    public Task<DateTime?> GetLastUpdateAsync(CancellationToken ct) =>
+        db.Documents.MaxAsync(d => (DateTime?)d.UpdatedAt, ct);
+
+    public async Task<IReadOnlyList<DocumentDetails>> ListDeletedAsync(CancellationToken ct) =>
+        await db.Documents.AsNoTracking()
+            .Where(d => d.DeletedAt != null)
+            .OrderByDescending(d => d.DeletedAt).ThenByDescending(d => d.Id)
+            .Select(d => new DocumentDetails(
+                d.Id, d.Partner.Name, d.DocNumber, d.IssueDate, d.Type, d.Direction,
+                d.RelativePath, d.OriginalName, d.ImportedAt, d.UpdatedAt, d.DeletedAt))
             .ToListAsync(ct).ConfigureAwait(false);
 
     public async Task<IReadOnlyList<DocumentListItem>> SearchAsync(DocumentSearch search, int limit, CancellationToken ct) =>

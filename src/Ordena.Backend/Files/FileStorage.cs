@@ -93,6 +93,58 @@ internal sealed class FileStorage : IFileStorage
         }
     }
 
+    public async Task<Result> MoveAsync(string fromPath, string toPath, CancellationToken ct)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(toPath)!);
+            await RetryWhileLockedAsync(() =>
+            {
+                File.Move(fromPath, toPath, overwrite: false);
+                return Task.FromResult(true);
+            }, ct).ConfigureAwait(false);
+            return Result.Ok();
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or DriveNotFoundException)
+        {
+            return Result.Fail(ErrorCode.FileMissing, fromPath);
+        }
+        catch (IOException ex) when (LowWord(ex) is ErrorFileExists or ErrorAlreadyExists)
+        {
+            return Result.Fail(ErrorCode.TargetExists, toPath);
+        }
+        catch (IOException ex) when (IsLocked(ex))
+        {
+            return Result.Fail(ErrorCode.FileLocked, fromPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Result.Fail(ErrorCode.IoError, ex.Message);
+        }
+    }
+
+    public void TryDeleteEmptyFolders(string folder, string stopAt)
+    {
+        // "E:\" stays "E:\" (an archive can be a whole disk), "D:\Facturas" becomes "D:\Facturas\".
+        var root = Path.GetFullPath(stopAt);
+        if (!Path.EndsInDirectorySeparator(root))
+            root += Path.DirectorySeparatorChar;
+        var current = Path.GetFullPath(folder);
+        while (current.StartsWith(root, StringComparison.OrdinalIgnoreCase) && current.Length > root.Length)
+        {
+            try
+            {
+                // Without recursive it throws instead of deleting a folder that still has something in it.
+                Directory.Delete(current);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return;
+            }
+            current = Path.GetDirectoryName(current)!;
+        }
+    }
+
     public async Task<bool> TryDeleteAsync(string path, CancellationToken ct)
     {
         try
@@ -113,6 +165,45 @@ internal sealed class FileStorage : IFileStorage
             return false;
         }
     }
+
+    public IReadOnlyList<string> ListFiles(string folder) =>
+        Directory.Exists(folder)
+            ? Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+            : [];
+
+    public void TryEmptyFolder(string folder)
+    {
+        Directory.CreateDirectory(folder);
+        foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+            DeleteQuietly(file);
+        foreach (var subfolder in Directory.GetDirectories(folder))
+        {
+            try
+            {
+                Directory.Delete(subfolder, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    public long? AvailableFreeSpace(string path)
+    {
+        var root = Path.GetPathRoot(Path.GetFullPath(path));
+        if (string.IsNullOrEmpty(root) || root.StartsWith(@"\\", StringComparison.Ordinal))
+            return null;
+        try
+        {
+            return new DriveInfo(root).AvailableFreeSpace;
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    public long GetLength(string path) => new FileInfo(path).Length;
 
     public bool FileExists(string path) => File.Exists(path);
 

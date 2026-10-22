@@ -17,8 +17,16 @@ internal interface IDocumentRepository
     // Deleted documents included, like the unique index. Case is ignored (NOCASE).
     Task<bool> RelativePathExistsAsync(string relativePath, CancellationToken ct);
 
-    // Not deleted, read-only. For the missing-file check.
-    Task<IReadOnlyList<Document>> ListActiveAsync(CancellationToken ct);
+    // Every document with its Partner, deleted ones included (their files are in _Papelera), read-only.
+    // For "Comprobar carpeta".
+    Task<IReadOnlyList<Document>> ListAllAsync(CancellationToken ct);
+
+    // The latest UpdatedAt, or null without documents. Every import, edit, delete and restore sets it,
+    // so it says whether anything changed since the last backup.
+    Task<DateTime?> GetLastUpdateAsync(CancellationToken ct);
+
+    // Only deleted, read-only, the most recently deleted first. For the trash.
+    Task<IReadOnlyList<DocumentDetails>> ListDeletedAsync(CancellationToken ct);
 
     // Not deleted, read-only, only the grid columns.
     Task<IReadOnlyList<DocumentListItem>> SearchAsync(DocumentSearch search, int limit, CancellationToken ct);

@@ -82,7 +82,27 @@ public sealed class DocumentRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task ListActive_skips_deleted_documents()
+    public async Task ListDeleted_returns_only_deleted_documents_newest_first()
+    {
+        var partner = _db.Save(TestData.NewPartner());
+        _db.Save(TestData.NewDocument(partner.Id));
+        var older = TestData.NewDocument(partner.Id);
+        older.DeletedAt = TestData.Now;
+        _db.Save(older);
+        var newer = TestData.NewDocument(partner.Id);
+        newer.DeletedAt = TestData.Now.AddDays(1);
+        _db.Save(newer);
+
+        await using var uow = _db.UnitOfWorkFactory.Create();
+        var trash = await uow.Documents.ListDeletedAsync(Ct);
+
+        Assert.Equal([newer.Id, older.Id], trash.Select(d => d.Id));
+        Assert.Equal("Telefónica España, S.A.U.", trash[0].PartnerName);
+        Assert.Equal(TestData.Now.AddDays(1), trash[0].DeletedAt);
+    }
+
+    [Fact]
+    public async Task ListAll_includes_deleted_documents()
     {
         var partner = _db.Save(TestData.NewPartner());
         var active = _db.Save(TestData.NewDocument(partner.Id));
@@ -91,9 +111,28 @@ public sealed class DocumentRepositoryTests : IDisposable
         _db.Save(deleted);
 
         await using var uow = _db.UnitOfWorkFactory.Create();
-        var documents = await uow.Documents.ListActiveAsync(Ct);
+        var documents = await uow.Documents.ListAllAsync(Ct);
 
-        Assert.Equal(active.Id, Assert.Single(documents).Id);
+        Assert.Equal([active.Id, deleted.Id], documents.Select(d => d.Id));
+    }
+
+    [Fact]
+    public async Task GetLastUpdate_is_the_latest_UpdatedAt_and_null_without_documents()
+    {
+        await using (var empty = _db.UnitOfWorkFactory.Create())
+            Assert.Null(await empty.Documents.GetLastUpdateAsync(Ct));
+
+        var partner = _db.Save(TestData.NewPartner());
+        _db.Save(TestData.NewDocument(partner.Id));
+        var edited = TestData.NewDocument(partner.Id);
+        edited.UpdatedAt = TestData.Now.AddDays(3);
+        _db.Save(edited);
+
+        await using var uow = _db.UnitOfWorkFactory.Create();
+        var lastUpdate = await uow.Documents.GetLastUpdateAsync(Ct);
+
+        Assert.Equal(TestData.Now.AddDays(3), lastUpdate);
+        Assert.Equal(DateTimeKind.Utc, lastUpdate?.Kind);
     }
 
     [Fact]

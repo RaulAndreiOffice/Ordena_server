@@ -12,6 +12,8 @@ internal interface IPartnerRepository
     Task<Partner?> GetByNameNormAsync(string nameNorm, CancellationToken ct);
     Task<bool> FolderNameExistsAsync(string folderName, CancellationToken ct);
 
+    Task<bool> AnyAsync(CancellationToken ct);
+
     void Add(Partner partner);
 
     // Only to undo an import that created the partner and then failed.
