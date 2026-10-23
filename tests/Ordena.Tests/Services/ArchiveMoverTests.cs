@@ -272,10 +272,12 @@ public sealed class ArchiveMoverTests : IDisposable
         public Task<Result<byte[]>> ReadAsync(string path, CancellationToken ct) => inner.ReadAsync(path, ct);
         public Task<bool> TryDeleteAsync(string path, CancellationToken ct) => inner.TryDeleteAsync(path, ct);
         public void TryDeleteEmptyFolders(string folder, string stopAt) => inner.TryDeleteEmptyFolders(folder, stopAt);
-        public IReadOnlyList<string> ListFiles(string folder) => inner.ListFiles(folder);
+        public Result CreateFolder(string path) => inner.CreateFolder(path);
+    public IReadOnlyList<string> ListFiles(string folder) => inner.ListFiles(folder);
         public void TryEmptyFolder(string folder) => inner.TryEmptyFolder(folder);
         public long? AvailableFreeSpace(string path) => inner.AvailableFreeSpace(path);
         public long GetLength(string path) => inner.GetLength(path);
+        public DateTime GetLastWriteTime(string path) => inner.GetLastWriteTime(path);
         public bool FileExists(string path) => inner.FileExists(path);
         public bool DirectoryExists(string path) => inner.DirectoryExists(path);
     }

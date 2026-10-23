@@ -42,6 +42,22 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
                 d.RelativePath, d.OriginalName, d.ImportedAt, d.UpdatedAt, d.DeletedAt))
             .ToListAsync(ct).ConfigureAwait(false);
 
+    public async Task<IReadOnlyList<(string PartnerNameNorm, string DocNumberNorm)>> GetNumberKeysAsync(CancellationToken ct) =>
+        (await db.Documents.AsNoTracking()
+            .Where(d => d.DeletedAt == null)
+            .Select(d => new { d.Partner.NameNorm, d.DocNumberNorm })
+            .ToListAsync(ct).ConfigureAwait(false))
+        .Select(k => (k.NameNorm, k.DocNumberNorm))
+        .ToList();
+
+    public async Task<IReadOnlyList<int>> GetYearsAsync(CancellationToken ct) =>
+        await db.Documents.AsNoTracking()
+            .Where(d => d.DeletedAt == null)
+            .Select(d => d.IssueDate.Year)
+            .Distinct()
+            .OrderByDescending(year => year)
+            .ToListAsync(ct).ConfigureAwait(false);
+
     public async Task<IReadOnlyList<DocumentListItem>> SearchAsync(DocumentSearch search, int limit, CancellationToken ct) =>
         await Sort(Filter(search), search.SortBy, search.Descending)
             .Take(limit)
@@ -98,10 +114,11 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null),
     };
 
-    // Then by Id, so rows with the same key keep the same order from one query to the next.
+    // Rows with the same key: the newest document first (a partner's invoices by date), then by Id, so
+    // they keep the same order from one query to the next.
     private static IQueryable<Document> Order<TKey>(
         IQueryable<Document> query, Expression<Func<Document, TKey>> key, bool descending) =>
-        descending
-            ? query.OrderByDescending(key).ThenByDescending(d => d.Id)
-            : query.OrderBy(key).ThenBy(d => d.Id);
+        (descending ? query.OrderByDescending(key) : query.OrderBy(key))
+            .ThenByDescending(d => d.IssueDate)
+            .ThenByDescending(d => d.Id);
 }

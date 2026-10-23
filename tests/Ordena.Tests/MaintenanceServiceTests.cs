@@ -97,7 +97,8 @@ public sealed class MaintenanceServiceTests : IDisposable
         var away = _archive.Root + "-unplugged";
         Directory.Move(_archive.Root, away);
 
-        await using var second = await StartAsync(); // doesn't fail while the archive is away
+        // The root is already saved; setting it again would recreate the unplugged folder.
+        await using var second = await StartAsync(setArchiveRoot: false); // doesn't fail while the archive is away
         var maintenance = second.GetRequiredService<IMaintenanceService>();
         Assert.Equal(ErrorCode.ArchiveUnavailable, (await maintenance.RecoverInterruptedMovesAsync(Ct)).Error);
 

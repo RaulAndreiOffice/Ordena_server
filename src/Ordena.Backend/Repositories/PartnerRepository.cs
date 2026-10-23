@@ -30,6 +30,9 @@ internal sealed class PartnerRepository(AppDbContext db) : IPartnerRepository
 
     public Task<bool> AnyAsync(CancellationToken ct) => db.Partners.AnyAsync(ct);
 
+    public async Task<IReadOnlyList<Partner>> ListAllAsync(CancellationToken ct) =>
+        await db.Partners.AsNoTracking().OrderBy(p => p.Id).ToListAsync(ct).ConfigureAwait(false);
+
     public void Add(Partner partner) => db.Partners.Add(partner);
 
     public void Remove(Partner partner) => db.Partners.Remove(partner);

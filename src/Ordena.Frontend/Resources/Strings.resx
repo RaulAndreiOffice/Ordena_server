@@ -1,0 +1,678 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English, the neutral language. Every key here must also be in Strings.es.resx (LocalizationTests checks it). -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App_Title" xml:space="preserve">
+    <value>Ordena</value>
+  </data>
+  <data name="Nav_Section_Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Nav_Section_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Page_Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Page_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Page_Trash" xml:space="preserve">
+    <value>Trash</value>
+  </data>
+  <data name="Page_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings_LanguageHint" xml:space="preserve">
+    <value>For the texts and the date format.</value>
+  </data>
+  <data name="Settings_RestartNeeded" xml:space="preserve">
+    <value>The new language applies when Ordena restarts.</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="Search_ImportButton" xml:space="preserve">
+    <value>Import invoices</value>
+  </data>
+  <data name="Search_Placeholder" xml:space="preserve">
+    <value>Supplier, customer, number or year</value>
+  </data>
+  <data name="Search_Empty" xml:space="preserve">
+    <value>No documents filed yet</value>
+  </data>
+  <data name="Search_EmptyHint" xml:space="preserve">
+    <value>Import your PDF invoices to find them here.</value>
+  </data>
+  <data name="Search_NoMatches" xml:space="preserve">
+    <value>No document matches the search</value>
+  </data>
+  <data name="Search_ResultOne" xml:space="preserve">
+    <value>1 document</value>
+  </data>
+  <data name="Search_ResultMany" xml:space="preserve">
+    <value>{0:N0} documents</value>
+  </data>
+  <data name="Search_Truncated" xml:space="preserve">
+    <value>Showing {0:N0} of {1:N0}: narrow the search</value>
+  </data>
+  <data name="Search_ConfirmDelete" xml:space="preserve">
+    <value>Move «{0}» no. {1} to the trash?
+
+You can restore it from the Trash.</value>
+  </data>
+  <data name="Search_FileMissingAsk" xml:space="preserve">
+    <value>The file isn't where it should be:
+{0}
+
+Find it? It will be linked to this document again.</value>
+  </data>
+  <data name="Search_PickFileTitle" xml:space="preserve">
+    <value>Find this document's file</value>
+  </data>
+  <data name="Filter_Year" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="Filter_Quarter" xml:space="preserve">
+    <value>Quarter</value>
+  </data>
+  <data name="Filter_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Filter_Direction" xml:space="preserve">
+    <value>Received or issued</value>
+  </data>
+  <data name="Filter_AllYears" xml:space="preserve">
+    <value>All years</value>
+  </data>
+  <data name="Filter_AllQuarters" xml:space="preserve">
+    <value>Whole year</value>
+  </data>
+  <data name="Filter_AllTypes" xml:space="preserve">
+    <value>All types</value>
+  </data>
+  <data name="Filter_AllDirections" xml:space="preserve">
+    <value>Received and issued</value>
+  </data>
+  <data name="Filter_Received" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Filter_Issued" xml:space="preserve">
+    <value>Issued</value>
+  </data>
+  <data name="Filter_Clear" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="Quarter_1" xml:space="preserve">
+    <value>Q1 · Jan–Mar</value>
+  </data>
+  <data name="Quarter_2" xml:space="preserve">
+    <value>Q2 · Apr–Jun</value>
+  </data>
+  <data name="Quarter_3" xml:space="preserve">
+    <value>Q3 · Jul–Sep</value>
+  </data>
+  <data name="Quarter_4" xml:space="preserve">
+    <value>Q4 · Oct–Dec</value>
+  </data>
+  <data name="Column_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Column_Partner" xml:space="preserve">
+    <value>Supplier / Customer</value>
+  </data>
+  <data name="Column_Number" xml:space="preserve">
+    <value>Document no.</value>
+  </data>
+  <data name="Column_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Column_Direction" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="Column_DeletedAt" xml:space="preserve">
+    <value>Deleted</value>
+  </data>
+  <data name="Action_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Action_ShowInFolder" xml:space="preserve">
+    <value>Show in folder</value>
+  </data>
+  <data name="Action_Edit" xml:space="preserve">
+    <value>Edit…</value>
+  </data>
+  <data name="Action_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Action_Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Action_More" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="Edit_WindowTitle" xml:space="preserve">
+    <value>Ordena — Edit document</value>
+  </data>
+  <data name="Edit_Title" xml:space="preserve">
+    <value>Edit document</value>
+  </data>
+  <data name="Edit_Save" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="Edit_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Edit_FileMissing" xml:space="preserve">
+    <value>The file isn't where it should be. Open the document from Search to find it first.</value>
+  </data>
+  <data name="Trash_Hint" xml:space="preserve">
+    <value>Deleted documents keep their file in the archive's _Papelera folder.</value>
+  </data>
+  <data name="Trash_Empty" xml:space="preserve">
+    <value>The trash is empty</value>
+  </data>
+  <data name="Trash_CountOne" xml:space="preserve">
+    <value>1 document in the trash</value>
+  </data>
+  <data name="Trash_CountMany" xml:space="preserve">
+    <value>{0:N0} documents in the trash</value>
+  </data>
+  <data name="Footer_Archive" xml:space="preserve">
+    <value>Invoices folder: {0}</value>
+  </data>
+  <data name="Footer_Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="FirstRun_WindowTitle" xml:space="preserve">
+    <value>Ordena — Welcome</value>
+  </data>
+  <data name="FirstRun_Title" xml:space="preserve">
+    <value>Welcome to Ordena</value>
+  </data>
+  <data name="FirstRun_Subtitle" xml:space="preserve">
+    <value>Choose the language and the folder where your invoices will be kept.</value>
+  </data>
+  <data name="FirstRun_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="FirstRun_Folder" xml:space="preserve">
+    <value>Invoices folder</value>
+  </data>
+  <data name="FirstRun_FolderHint" xml:space="preserve">
+    <value>It's created if it doesn't exist yet.</value>
+  </data>
+  <data name="FirstRun_ChangeFolder" xml:space="preserve">
+    <value>Change…</value>
+  </data>
+  <data name="FirstRun_PickFolderTitle" xml:space="preserve">
+    <value>Choose the invoices folder</value>
+  </data>
+  <data name="FirstRun_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="FirstRun_CannotCreateFolder" xml:space="preserve">
+    <value>The folder couldn't be created:
+{0}
+
+Choose another one with “Change…”.</value>
+  </data>
+  <data name="Startup_ArchiveUnavailable" xml:space="preserve">
+    <value>The invoices folder isn't available:
+{0}
+
+Connect the disk and choose Yes to try again. With No you can still search, but not open or import files until it's back.</value>
+  </data>
+  <data name="Dialog_Title" xml:space="preserve">
+    <value>Ordena</value>
+  </data>
+  <data name="Error_Unexpected" xml:space="preserve">
+    <value>Something unexpected went wrong. The details are in the log, in:
+{0}</value>
+  </data>
+  <data name="Form_Details" xml:space="preserve">
+    <value>Document details</value>
+  </data>
+  <data name="Form_Supplier" xml:space="preserve">
+    <value>Supplier</value>
+  </data>
+  <data name="Form_Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Form_DocNumber" xml:space="preserve">
+    <value>Document number</value>
+  </data>
+  <data name="Form_IssueDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Form_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Form_SavedAs" xml:space="preserve">
+    <value>Will be filed under «{0}»</value>
+  </data>
+  <data name="Validation_Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="Import_AddFiles" xml:space="preserve">
+    <value>Add files</value>
+  </data>
+  <data name="Import_DropTitle" xml:space="preserve">
+    <value>Drag your PDF invoices here</value>
+  </data>
+  <data name="Import_DropOr" xml:space="preserve">
+    <value>or </value>
+  </data>
+  <data name="Import_Browse" xml:space="preserve">
+    <value>browse your computer</value>
+  </data>
+  <data name="Import_DropHint" xml:space="preserve">
+    <value>PDF only · filed one by one, with a preview</value>
+  </data>
+  <data name="Import_DropOverlay" xml:space="preserve">
+    <value>Drop the PDFs to import them</value>
+  </data>
+  <data name="Import_Position" xml:space="preserve">
+    <value>File {0} of {1} · {2}</value>
+  </data>
+  <data name="Import_Queue" xml:space="preserve">
+    <value>Queue</value>
+  </data>
+  <data name="Import_ClearFinished" xml:space="preserve">
+    <value>Remove finished</value>
+  </data>
+  <data name="Import_State_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Import_State_Saved" xml:space="preserve">
+    <value>Filed</value>
+  </data>
+  <data name="Import_State_Skipped" xml:space="preserve">
+    <value>Skipped</value>
+  </data>
+  <data name="Import_State_Failed" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Import_Skip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="Import_Save" xml:space="preserve">
+    <value>Save and next</value>
+  </data>
+  <data name="Import_SavedAs" xml:space="preserve">
+    <value>Filed as {0}</value>
+  </data>
+  <data name="Import_SavedSourceKept" xml:space="preserve">
+    <value>Filed as {0}. The original couldn't be deleted: it may be open in another program.</value>
+  </data>
+  <data name="Import_AskDuplicate" xml:space="preserve">
+    <value>«{0}» already has a document numbered {1}.
+
+Save this one anyway?</value>
+  </data>
+  <data name="Import_AlreadyArchived" xml:space="preserve">
+    <value>This file is already in the archive.</value>
+  </data>
+  <data name="Import_AlreadyInTrash" xml:space="preserve">
+    <value>This file is in the trash.</value>
+  </data>
+  <data name="Import_OpenArchived" xml:space="preserve">
+    <value>Open it</value>
+  </data>
+  <data name="Import_Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Import_Restored" xml:space="preserve">
+    <value>Restored from the trash</value>
+  </data>
+  <data name="Import_Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Import_FinishedTitle" xml:space="preserve">
+    <value>All done</value>
+  </data>
+  <data name="Import_Summary" xml:space="preserve">
+    <value>Filed: {0} · Skipped: {1}</value>
+  </data>
+  <data name="Import_AddMore" xml:space="preserve">
+    <value>Add more files</value>
+  </data>
+  <data name="Import_ClearList" xml:space="preserve">
+    <value>Clear the list</value>
+  </data>
+  <data name="Import_PickFilesTitle" xml:space="preserve">
+    <value>Choose the PDF invoices</value>
+  </data>
+  <data name="Import_PdfFilter" xml:space="preserve">
+    <value>PDF documents</value>
+  </data>
+  <data name="Preview_None" xml:space="preserve">
+    <value>No preview</value>
+  </data>
+  <data name="Preview_Unavailable" xml:space="preserve">
+    <value>The preview needs Microsoft Edge WebView2, which isn't installed.</value>
+  </data>
+  <data name="Preview_OpenInViewer" xml:space="preserve">
+    <value>Open in the viewer</value>
+  </data>
+  <data name="Error_NotPdf" xml:space="preserve">
+    <value>The file is not a PDF.</value>
+  </data>
+  <data name="Error_Empty" xml:space="preserve">
+    <value>The file is empty.</value>
+  </data>
+  <data name="Error_AlreadyArchived" xml:space="preserve">
+    <value>This file is already archived.</value>
+  </data>
+  <data name="Error_AlreadyInTrash" xml:space="preserve">
+    <value>This file is already in the trash.</value>
+  </data>
+  <data name="Error_DuplicateNumber" xml:space="preserve">
+    <value>This supplier or customer already has a document with that number.</value>
+  </data>
+  <data name="Error_FileLocked" xml:space="preserve">
+    <value>The file is open in another program. Close it and try again.</value>
+  </data>
+  <data name="Error_FileMissing" xml:space="preserve">
+    <value>File not found.</value>
+  </data>
+  <data name="Error_TargetExists" xml:space="preserve">
+    <value>A file with that name already exists.</value>
+  </data>
+  <data name="Error_IoError" xml:space="preserve">
+    <value>The file couldn't be read or written.</value>
+  </data>
+  <data name="Error_InvalidPartnerName" xml:space="preserve">
+    <value>The supplier or customer name isn't valid.</value>
+  </data>
+  <data name="Error_ArchiveUnavailable" xml:space="preserve">
+    <value>The invoices folder isn't available.</value>
+  </data>
+  <data name="Error_NotSameFile" xml:space="preserve">
+    <value>The chosen file isn't the same document.</value>
+  </data>
+  <data name="Error_NotEnoughSpace" xml:space="preserve">
+    <value>There isn't enough space on the target disk.</value>
+  </data>
+  <data name="Error_NoBackup" xml:space="preserve">
+    <value>There is no backup in that folder.</value>
+  </data>
+  <data name="Error_ArchiveMismatch" xml:space="preserve">
+    <value>That folder doesn't contain this invoice archive.</value>
+  </data>
+  <data name="Error_InvalidArchiveFolder" xml:space="preserve">
+    <value>That folder can't be used for the invoice archive.</value>
+  </data>
+  <data name="DocType_Factura" xml:space="preserve">
+    <value>Invoice</value>
+  </data>
+  <data name="DocType_FacturaSimplificada" xml:space="preserve">
+    <value>Simplified invoice (receipt)</value>
+  </data>
+  <data name="DocType_FacturaRectificativa" xml:space="preserve">
+    <value>Corrective invoice</value>
+  </data>
+  <data name="DocType_Recibo" xml:space="preserve">
+    <value>Receipt</value>
+  </data>
+  <data name="DocType_Proforma" xml:space="preserve">
+    <value>Proforma / quote</value>
+  </data>
+  <data name="DocType_Otro" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Direction_Recibida" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Direction_Emitida" xml:space="preserve">
+    <value>Issued</value>
+  </data>
+  <data name="Page_BulkImport" xml:space="preserve">
+    <value>Import folder</value>
+  </data>
+  <data name="Error_InvalidNamePattern" xml:space="preserve">
+    <value>That file-name pattern can't be used.</value>
+  </data>
+  <data name="BulkRowStatus_Ok" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="BulkRowStatus_NotRecognized" xml:space="preserve">
+    <value>Not recognized</value>
+  </data>
+  <data name="BulkRowStatus_InvalidDate" xml:space="preserve">
+    <value>Invalid date</value>
+  </data>
+  <data name="BulkRowStatus_CheckDate" xml:space="preserve">
+    <value>Check date</value>
+  </data>
+  <data name="BulkRowStatus_NumberExists" xml:space="preserve">
+    <value>Number exists</value>
+  </data>
+  <data name="Bulk_Subtitle" xml:space="preserve">
+    <value>Copies an existing archive of consistently named PDFs. The old folder is never changed.</value>
+  </data>
+  <data name="Bulk_Step_Folder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="Bulk_Step_Pattern" xml:space="preserve">
+    <value>Pattern</value>
+  </data>
+  <data name="Bulk_Step_Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Bulk_Step_Partners" xml:space="preserve">
+    <value>Suppliers</value>
+  </data>
+  <data name="Bulk_Step_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Bulk_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Bulk_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Bulk_FolderTitle" xml:space="preserve">
+    <value>The folder to import</value>
+  </data>
+  <data name="Bulk_FolderLabel" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="Bulk_Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="Bulk_PickFolderTitle" xml:space="preserve">
+    <value>Choose the folder of the old archive</value>
+  </data>
+  <data name="Bulk_DirectionLabel" xml:space="preserve">
+    <value>All its files are</value>
+  </data>
+  <data name="Bulk_TypeLabel" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Bulk_PartnerFromFolder" xml:space="preserve">
+    <value>Supplier = name of the folder</value>
+  </data>
+  <data name="Bulk_PartnerFromFolderHint" xml:space="preserve">
+    <value>For archives with one subfolder per supplier.</value>
+  </data>
+  <data name="Bulk_Analyze" xml:space="preserve">
+    <value>Analyze</value>
+  </data>
+  <data name="Bulk_FolderMissing" xml:space="preserve">
+    <value>That folder doesn't exist. Type its full path or use Browse.</value>
+  </data>
+  <data name="Bulk_FolderIsArchive" xml:space="preserve">
+    <value>That folder is the invoices folder, or is inside it or contains it. Choose the old archive.</value>
+  </data>
+  <data name="Bulk_PatternTitle" xml:space="preserve">
+    <value>How the files are named</value>
+  </data>
+  <data name="Bulk_DetectedPatterns" xml:space="preserve">
+    <value>Detected patterns</value>
+  </data>
+  <data name="Bulk_UseCustomPattern" xml:space="preserve">
+    <value>Write my own pattern</value>
+  </data>
+  <data name="Bulk_CustomPatternHelp" xml:space="preserve">
+    <value>Use {fecha}, {proveedor} and {numero}; anything else is literal text. Example: {fecha}_{proveedor}_{numero}</value>
+  </data>
+  <data name="Bulk_DateFormat" xml:space="preserve">
+    <value>Date format</value>
+  </data>
+  <data name="Bulk_ExamplesTitle" xml:space="preserve">
+    <value>How it reads the names</value>
+  </data>
+  <data name="Bulk_Matches" xml:space="preserve">
+    <value>{0:N0} of {1:N0} match</value>
+  </data>
+  <data name="Bulk_NoPattern" xml:space="preserve">
+    <value>No pattern reads these names. Write one below.</value>
+  </data>
+  <data name="Bulk_Example" xml:space="preserve">
+    <value>{0} → {1} · {2} · {3}</value>
+  </data>
+  <data name="Bulk_PatternError_UnknownToken" xml:space="preserve">
+    <value>Only {fecha}, {proveedor} and {numero} can go between braces.</value>
+  </data>
+  <data name="Bulk_PatternError_RepeatedToken" xml:space="preserve">
+    <value>Each part can appear only once.</value>
+  </data>
+  <data name="Bulk_PatternError_MissingNumber" xml:space="preserve">
+    <value>The pattern needs {numero}.</value>
+  </data>
+  <data name="Bulk_PatternError_MissingPartner" xml:space="preserve">
+    <value>The pattern needs {proveedor}, or tick "Supplier = name of the folder".</value>
+  </data>
+  <data name="Bulk_PatternError_TokensTogether" xml:space="preserve">
+    <value>Two parts need something between them, like _ or -.</value>
+  </data>
+  <data name="Bulk_PatternError_UnknownDateFormat" xml:space="preserve">
+    <value>Choose a date format.</value>
+  </data>
+  <data name="Bulk_PreviewTitle" xml:space="preserve">
+    <value>Check the files</value>
+  </data>
+  <data name="Bulk_PreviewHint" xml:space="preserve">
+    <value>Date, supplier and number can be fixed by double-clicking them. Only ticked rows are imported.</value>
+  </data>
+  <data name="Bulk_UseFileDates" xml:space="preserve">
+    <value>Use the file's date</value>
+  </data>
+  <data name="Bulk_Column_Include" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Bulk_Column_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Bulk_Column_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Bulk_FilterAll" xml:space="preserve">
+    <value>All ({0:N0})</value>
+  </data>
+  <data name="Bulk_Filter_Ok" xml:space="preserve">
+    <value>Ready ({0:N0})</value>
+  </data>
+  <data name="Bulk_Filter_NotRecognized" xml:space="preserve">
+    <value>Not recognized ({0:N0})</value>
+  </data>
+  <data name="Bulk_Filter_InvalidDate" xml:space="preserve">
+    <value>Invalid date ({0:N0})</value>
+  </data>
+  <data name="Bulk_Filter_CheckDate" xml:space="preserve">
+    <value>Check date ({0:N0})</value>
+  </data>
+  <data name="Bulk_Filter_NumberExists" xml:space="preserve">
+    <value>Number exists ({0:N0})</value>
+  </data>
+  <data name="Bulk_WillImport" xml:space="preserve">
+    <value>{0:N0} of {1:N0} will be imported</value>
+  </data>
+  <data name="Bulk_PartnersTitle" xml:space="preserve">
+    <value>Supplier names</value>
+  </data>
+  <data name="Bulk_GroupsTitle" xml:space="preserve">
+    <value>Probably the same supplier</value>
+  </data>
+  <data name="Bulk_GroupsHint" xml:space="preserve">
+    <value>Ticked groups are imported under the name on the right.</value>
+  </data>
+  <data name="Bulk_NoGroups" xml:space="preserve">
+    <value>No similar names found.</value>
+  </data>
+  <data name="Bulk_AllNames" xml:space="preserve">
+    <value>All names</value>
+  </data>
+  <data name="Bulk_Column_Name" xml:space="preserve">
+    <value>Name in the files</value>
+  </data>
+  <data name="Bulk_Column_Files" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="Bulk_Column_ImportAs" xml:space="preserve">
+    <value>Import as</value>
+  </data>
+  <data name="Bulk_Exists" xml:space="preserve">
+    <value>Already exists</value>
+  </data>
+  <data name="Bulk_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Bulk_RunningTitle" xml:space="preserve">
+    <value>Importing…</value>
+  </data>
+  <data name="Bulk_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Bulk_Progress" xml:space="preserve">
+    <value>{0:N0} of {1:N0} · {2}</value>
+  </data>
+  <data name="Bulk_ReportTitle" xml:space="preserve">
+    <value>Import finished</value>
+  </data>
+  <data name="Bulk_Report" xml:space="preserve">
+    <value>Imported {0:N0} · Duplicates {1:N0} · Number already used {2:N0} · Failed {3:N0} · {4}</value>
+  </data>
+  <data name="Bulk_ReportCancelled" xml:space="preserve">
+    <value>Cancelled. Imported {0:N0} · Duplicates {1:N0} · Number already used {2:N0} · Failed {3:N0} · {4}</value>
+  </data>
+  <data name="Bulk_LeftOut" xml:space="preserve">
+    <value>{0:N0} files need to be imported by hand.</value>
+  </data>
+  <data name="Bulk_SendToManual" xml:space="preserve">
+    <value>Send to manual import</value>
+  </data>
+  <data name="Bulk_GoToSearch" xml:space="preserve">
+    <value>View in Search</value>
+  </data>
+  <data name="Bulk_StartOver" xml:space="preserve">
+    <value>Import another folder</value>
+  </data>
+  <data name="Bulk_CheckArchive" xml:space="preserve">
+    <value>Check the new archive; afterwards you can delete the old folder.</value>
+  </data>
+</root>

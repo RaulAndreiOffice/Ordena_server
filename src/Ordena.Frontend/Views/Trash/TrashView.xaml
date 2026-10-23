@@ -1,0 +1,69 @@
+<!-- The trash, with the same table look as the search page: when each document was deleted, what it is,
+     and a button to put it back in its folder. -->
+<UserControl x:Class="Ordena.Frontend.Views.Trash.TrashView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Ordena.Frontend.Controls"
+             xmlns:converters="clr-namespace:Ordena.Frontend.Converters"
+             xmlns:res="clr-namespace:Ordena.Frontend.Resources">
+
+    <UserControl.Resources>
+        <converters:EnumToLocalizedConverter x:Key="Localized" />
+        <converters:UtcToLocalConverter x:Key="Local" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,20">
+            <TextBlock Text="{Binding Title}" Style="{StaticResource Text.PageTitle}" />
+            <TextBlock Text="{x:Static res:Strings.Trash_Hint}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <ContentControl Grid.Row="1" Style="{StaticResource Card}" Padding="0" Focusable="False">
+            <Grid>
+                <DataGrid Style="{StaticResource DataGrid.List}" Margin="1" CanUserSortColumns="False"
+                          ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                          AutomationProperties.Name="{Binding Title}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_DeletedAt}" Width="160"
+                                            Binding="{Binding DeletedAt, Converter={StaticResource Local}, StringFormat=g}" />
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" Width="110"
+                                            Binding="{Binding IssueDate, StringFormat=d}" />
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" Width="2*" Binding="{Binding PartnerName}" />
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Number}" Width="*" Binding="{Binding DocNumber}" />
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Type}" Width="*"
+                                            Binding="{Binding Type, Converter={StaticResource Localized}}" />
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Direction}" Width="110"
+                                            Binding="{Binding Direction, Converter={StaticResource Localized}}" />
+                        <DataGridTemplateColumn Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource Button.Secondary}" Height="30" Padding="12,0"
+                                            HorizontalAlignment="Center" Content="{x:Static res:Strings.Action_Restore}"
+                                            Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,44,0,0"
+                            Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+                    <controls:Icon Data="{StaticResource Icon.Bold.Trash}" Kind="Bold" Size="32" HorizontalAlignment="Center"
+                                   Foreground="{StaticResource Brush.Grey300}" />
+                    <TextBlock Text="{x:Static res:Strings.Trash_Empty}" Style="{StaticResource Text.Secondary}"
+                               HorizontalAlignment="Center" Margin="0,10,0,0" />
+                </StackPanel>
+            </Grid>
+        </ContentControl>
+
+        <TextBlock Grid.Row="2" Text="{Binding StatusText}" Style="{StaticResource Text.Secondary}" Margin="2,12,0,0"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}" />
+    </Grid>
+</UserControl>

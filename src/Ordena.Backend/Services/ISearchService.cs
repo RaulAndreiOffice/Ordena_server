@@ -7,4 +7,7 @@ public interface ISearchService
     // Deleted documents are never included. At most 500 items; TotalCount counts every match.
     // Throws ArgumentOutOfRangeException when Quarter is not 1 to 4.
     Task<SearchResult> SearchAsync(SearchQuery query, CancellationToken ct);
+
+    // The years that have documents (not deleted ones), the newest first: the year filter's choices.
+    Task<IReadOnlyList<int>> GetYearsAsync(CancellationToken ct);
 }

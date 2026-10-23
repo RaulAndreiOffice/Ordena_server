@@ -1,0 +1,60 @@
+<!-- The Kanakku kit's type scale, in its font, Instrument Sans (embedded; see Resources/Fonts/OFL.txt). -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <FontFamily x:Key="Font.Sans">pack://application:,,,/Resources/Fonts/#Instrument Sans</FontFamily>
+
+    <!-- The Fluent controls read their font from this key. -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">pack://application:,,,/Resources/Fonts/#Instrument Sans</FontFamily>
+
+    <!-- Body lg: 14, the default for text in the app. -->
+    <Style x:Key="Text.Body" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text}" />
+    </Style>
+
+    <Style x:Key="Text.BodyMedium" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <!-- Body md: 13, for field labels and buttons. -->
+    <Style x:Key="Text.Label" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <Style x:Key="Text.Secondary" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+    </Style>
+
+    <!-- Body sm: 12, for the footer and hints. -->
+    <Style x:Key="Text.Small" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+    </Style>
+
+    <!-- The sidebar's section names ("Documentos"). -->
+    <Style x:Key="Text.SectionLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+    </Style>
+
+    <!-- Heading 6: 18 Bold, for card titles. -->
+    <Style x:Key="Text.Heading" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- A page's title ("Purchase" in the kit): 20 Bold. -->
+    <Style x:Key="Text.PageTitle" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+</ResourceDictionary>

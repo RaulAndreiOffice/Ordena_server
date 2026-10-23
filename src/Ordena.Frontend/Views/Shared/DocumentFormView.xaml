@@ -1,0 +1,61 @@
+<!-- The fields of one document, shared by the import screen and the edit dialog: Recibida/Emitida,
+     the partner (with suggestions), number, date and type. DataContext: DocumentFormViewModel. -->
+<UserControl x:Class="Ordena.Frontend.Views.Shared.DocumentFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Ordena.Frontend.Controls"
+             xmlns:behaviors="clr-namespace:Ordena.Frontend.Behaviors"
+             xmlns:res="clr-namespace:Ordena.Frontend.Resources">
+
+    <UserControl.Resources>
+        <!-- A field's label; the fields themselves get the kit's light fill and Grey 100 border, and
+             the label's text as their accessible name, for screen readers. -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="Margin" Value="0,12,0,6" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <RadioButton Content="{x:Static res:Strings.Direction_Recibida}" IsChecked="{Binding IsReceived}"
+                         Margin="0,0,24,0" />
+            <RadioButton Content="{x:Static res:Strings.Direction_Emitida}" IsChecked="{Binding IsIssued}" />
+        </StackPanel>
+
+        <TextBlock Style="{StaticResource FieldLabel}">
+            <Run Text="{Binding PartnerLabel, Mode=OneWay}" /><Run Text=" *" Foreground="{StaticResource Brush.Error}" />
+        </TextBlock>
+        <controls:AutoCompleteTextBox Text="{Binding PartnerName, UpdateSourceTrigger=PropertyChanged}"
+                                      Suggestions="{Binding Suggestions}"
+                                      AutomationProperties.Name="{Binding PartnerLabel}"
+                                      behaviors:FocusBehavior.Request="{Binding FocusRequest}"
+                                      Height="38" FontSize="14" VerticalContentAlignment="Center"
+                                      Background="{StaticResource Brush.Light}" BorderBrush="{StaticResource Brush.Border}" />
+        <TextBlock Text="{Binding SimilarHint}" Style="{StaticResource Text.Small}" Margin="0,6,0,0"
+                   Foreground="{StaticResource Brush.Primary}" TextWrapping="Wrap"
+                   Visibility="{Binding SimilarHint, Converter={StaticResource NullToVisibility}}" />
+
+        <TextBlock Style="{StaticResource FieldLabel}">
+            <Run Text="{x:Static res:Strings.Form_DocNumber}" /><Run Text=" *" Foreground="{StaticResource Brush.Error}" />
+        </TextBlock>
+        <TextBox Text="{Binding DocNumber, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.Name="{x:Static res:Strings.Form_DocNumber}"
+                 Height="38" FontSize="14" VerticalContentAlignment="Center"
+                 Background="{StaticResource Brush.Light}" BorderBrush="{StaticResource Brush.Border}" />
+
+        <TextBlock Style="{StaticResource FieldLabel}">
+            <Run Text="{x:Static res:Strings.Form_IssueDate}" /><Run Text=" *" Foreground="{StaticResource Brush.Error}" />
+        </TextBlock>
+        <DatePicker SelectedDate="{Binding IssueDate}" Height="38" FontSize="14"
+                    AutomationProperties.Name="{x:Static res:Strings.Form_IssueDate}"
+                    Background="{StaticResource Brush.Light}" BorderBrush="{StaticResource Brush.Border}" />
+
+        <TextBlock Style="{StaticResource FieldLabel}">
+            <Run Text="{x:Static res:Strings.Form_Type}" /><Run Text=" *" Foreground="{StaticResource Brush.Error}" />
+        </TextBlock>
+        <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}"
+                  DisplayMemberPath="Label" Height="38" FontSize="14"
+                  AutomationProperties.Name="{x:Static res:Strings.Form_Type}"
+                  Background="{StaticResource Brush.Light}" BorderBrush="{StaticResource Brush.Border}" />
+    </StackPanel>
+</UserControl>

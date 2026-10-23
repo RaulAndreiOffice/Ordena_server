@@ -1,0 +1,57 @@
+<!-- No StartupUri: App.OnStartup builds the host, runs the startup sequence and shows the windows.
+     The look follows the Kanakku UI kit, light only, on top of WPF's Fluent theme. -->
+<Application x:Class="Ordena.Frontend.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Ordena.Frontend.ViewModels"
+             xmlns:converters="clr-namespace:Ordena.Frontend.Converters"
+             xmlns:search="clr-namespace:Ordena.Frontend.Views.Search"
+             xmlns:import="clr-namespace:Ordena.Frontend.Views.Import"
+             xmlns:bulk="clr-namespace:Ordena.Frontend.Views.BulkImport"
+             xmlns:trash="clr-namespace:Ordena.Frontend.Views.Trash"
+             xmlns:settings="clr-namespace:Ordena.Frontend.Views.Settings"
+             ThemeMode="Light">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Theme/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Typography.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Icons.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- The Fluent controls' accent (selection marks, focus lines, checkboxes) in the brand purple
+                 instead of the Windows accent color. The theme reads it from these SystemColors keys,
+                 and only keys defined directly in the application's resources win over the theme's own. -->
+            <Color x:Key="{x:Static SystemColors.AccentColorKey}">#7539FF</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#8A57FF</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#9781FF</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#B9A6FF</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#6430E0</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#5326C2</Color>
+            <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#421DA3</Color>
+
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <converters:BoolToVisibilityConverter x:Key="InverseBoolToVisibility" Invert="True" />
+            <converters:NullToVisibilityConverter x:Key="NullToVisibility" />
+            <converters:EqualsToVisibilityConverter x:Key="EqualsToVisibility" />
+
+            <!-- Each page ViewModel is shown by its View; MainWindow's ContentControl picks it by type. -->
+            <DataTemplate DataType="{x:Type vm:SearchViewModel}">
+                <search:SearchView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ImportViewModel}">
+                <import:ImportView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BulkImportViewModel}">
+                <bulk:BulkImportView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TrashViewModel}">
+                <trash:TrashView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <settings:SettingsView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -50,14 +50,14 @@ public sealed class BackendWiringTests : IDisposable
         await using (var first = await StartAsync())
         {
             var settings = first.GetRequiredService<ISettingsService>();
-            await settings.SetArchiveRootAsync(@"D:\Facturas", Ct);
+            await settings.SetArchiveRootAsync(Path.Combine(_folder, "Facturas"), Ct);
             await settings.SetLanguageAsync(UserSettings.English, Ct);
         }
 
         await using var second = await StartAsync();
         var loaded = await second.GetRequiredService<ISettingsService>().GetAsync(Ct);
 
-        Assert.Equal(@"D:\Facturas", loaded.ArchiveRoot);
+        Assert.Equal(Path.Combine(_folder, "Facturas"), loaded.ArchiveRoot);
         Assert.Equal(UserSettings.English, loaded.Language);
     }
 

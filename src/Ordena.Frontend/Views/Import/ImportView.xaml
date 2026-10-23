@@ -1,0 +1,208 @@
+<!-- The import screen, after the Kanakku kit's "Add New Product" and "Create New Invoice" forms:
+     with nothing queued, a drop zone; then the PDF on the left, and on the right the document's
+     fields (or what is wrong with the file, or the summary) above the queue. -->
+<UserControl x:Class="Ordena.Frontend.Views.Import.ImportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Ordena.Frontend.Controls"
+             xmlns:behaviors="clr-namespace:Ordena.Frontend.Behaviors"
+             xmlns:vm="clr-namespace:Ordena.Frontend.ViewModels"
+             xmlns:res="clr-namespace:Ordena.Frontend.Resources"
+             xmlns:shared="clr-namespace:Ordena.Frontend.Views.Shared">
+
+    <UserControl.Resources>
+        <!-- A file's state, colored like the kit's status tags (Paid, Pending, Cancelled). -->
+        <DataTemplate x:Key="StateTag" DataType="{x:Type vm:ImportQueueItem}">
+            <Border x:Name="Tag" CornerRadius="5" Padding="8,2" Background="{StaticResource Brush.Warning100}">
+                <TextBlock x:Name="Label" Text="{x:Static res:Strings.Import_State_Pending}" FontSize="12"
+                           FontWeight="Medium" Foreground="{StaticResource Brush.Warning}" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:ImportState.Saved}">
+                    <Setter TargetName="Tag" Property="Background" Value="{StaticResource Brush.Success100}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.Success}" />
+                    <Setter TargetName="Label" Property="Text" Value="{x:Static res:Strings.Import_State_Saved}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:ImportState.Skipped}">
+                    <Setter TargetName="Tag" Property="Background" Value="{StaticResource Brush.Light}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+                    <Setter TargetName="Label" Property="Text" Value="{x:Static res:Strings.Import_State_Skipped}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:ImportState.Failed}">
+                    <Setter TargetName="Tag" Property="Background" Value="{StaticResource Brush.Error100}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.Error}" />
+                    <Setter TargetName="Label" Property="Text" Value="{x:Static res:Strings.Import_State_Failed}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Header -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" VerticalAlignment="Center"
+                    Command="{Binding AddFilesCommand}" AutomationProperties.Name="{x:Static res:Strings.Import_AddFiles}">
+                <StackPanel Orientation="Horizontal">
+                    <controls:Icon Data="{StaticResource Icon.Linear.DocumentUpload}" Size="16" Margin="0,0,8,0" />
+                    <TextBlock Text="{x:Static res:Strings.Import_AddFiles}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="{Binding PositionText}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"
+                           Visibility="{Binding PositionText, Converter={StaticResource NullToVisibility}}" />
+            </StackPanel>
+        </DockPanel>
+
+        <Grid>
+            <!-- Nothing queued: the kit's "Drop Your Files or Browse" zone. -->
+            <Grid Visibility="{Binding HasQueue, Converter={StaticResource InverseBoolToVisibility}}">
+                <Rectangle RadiusX="8" RadiusY="8" Fill="{StaticResource Brush.Light}"
+                           Stroke="{StaticResource Brush.Grey200}" StrokeThickness="1.5" StrokeDashArray="5 4" />
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="64" Height="64" CornerRadius="32" HorizontalAlignment="Center"
+                            Background="{StaticResource Brush.PrimaryTransparent}">
+                        <controls:Icon Data="{StaticResource Icon.Linear.DocumentUpload}" Size="28"
+                                       Foreground="{StaticResource Brush.Primary}" />
+                    </Border>
+                    <TextBlock Text="{x:Static res:Strings.Import_DropTitle}" Style="{StaticResource Text.Heading}"
+                               HorizontalAlignment="Center" Margin="0,16,0,6" />
+                    <TextBlock Style="{StaticResource Text.Body}" HorizontalAlignment="Center">
+                        <Run Text="{x:Static res:Strings.Import_DropOr}" /><Hyperlink Command="{Binding AddFilesCommand}"
+                            Foreground="{StaticResource Brush.Primary}"><Run Text="{x:Static res:Strings.Import_Browse}" /></Hyperlink>
+                    </TextBlock>
+                    <TextBlock Text="{x:Static res:Strings.Import_DropHint}" Style="{StaticResource Text.Small}"
+                               HorizontalAlignment="Center" Margin="0,8,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Files queued -->
+            <Grid Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="380" />
+                </Grid.ColumnDefinitions>
+
+                <ContentControl Style="{StaticResource Card}" Padding="6" Focusable="False">
+                    <controls:PdfPreview FilePath="{Binding PreviewPath}" OpenExternallyCommand="{Binding OpenInViewerCommand}" />
+                </ContentControl>
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <!-- The document's fields -->
+                    <ContentControl Style="{StaticResource Card}" Padding="24" Focusable="False"
+                                    Visibility="{Binding CanFill, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <TextBlock Text="{x:Static res:Strings.Form_Details}" Style="{StaticResource Text.Heading}" />
+
+                            <shared:DocumentFormView DataContext="{Binding Form}" />
+
+                            <!-- The kit's form footer: the secondary action left, the primary right. -->
+                            <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,20,0,0" Padding="0,16,0,0">
+                                <DockPanel>
+                                    <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Import_Skip}"
+                                            Command="{Binding SkipCommand}" />
+                                    <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Import_Save}"
+                                            Command="{Binding SaveCommand}" IsDefault="True" HorizontalAlignment="Right" />
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </ContentControl>
+
+                    <!-- What is wrong with the file, with what can be done about it (the kit's alert). -->
+                    <Border CornerRadius="8" Padding="20" BorderThickness="1"
+                            Background="{StaticResource Brush.Warning100}" BorderBrush="{StaticResource Brush.Warning}"
+                            Visibility="{Binding HasProblem, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <DockPanel>
+                                <controls:Icon Data="{StaticResource Icon.Linear.Danger}" Size="20" VerticalAlignment="Top"
+                                               Foreground="{StaticResource Brush.Warning}" Margin="0,0,10,0" />
+                                <TextBlock Text="{Binding ProblemText}" Style="{StaticResource Text.BodyMedium}" TextWrapping="Wrap" />
+                            </DockPanel>
+                            <WrapPanel Margin="30,16,0,0">
+                                <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Import_OpenArchived}"
+                                        Command="{Binding OpenArchivedCommand}" Margin="0,0,8,0"
+                                        Visibility="{Binding CanOpenArchived, Converter={StaticResource BoolToVisibility}}" />
+                                <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Import_Restore}"
+                                        Command="{Binding RestoreCommand}" Margin="0,0,8,0"
+                                        Visibility="{Binding CanRestore, Converter={StaticResource BoolToVisibility}}" />
+                                <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Import_Retry}"
+                                        Command="{Binding RetryCommand}" Margin="0,0,8,0"
+                                        Visibility="{Binding CanRetry, Converter={StaticResource BoolToVisibility}}" />
+                                <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Import_Skip}"
+                                        Command="{Binding SkipCommand}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Every file dealt with -->
+                    <ContentControl Style="{StaticResource Card}" Padding="24" Focusable="False"
+                                    Visibility="{Binding IsFinished, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <controls:Icon Data="{StaticResource Icon.Linear.TickCircle}" Size="22"
+                                               Foreground="{StaticResource Brush.Success}" Margin="0,0,10,0" />
+                                <TextBlock Text="{x:Static res:Strings.Import_FinishedTitle}" Style="{StaticResource Text.Heading}" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Secondary}" Margin="32,6,0,20" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Import_AddMore}"
+                                        Command="{Binding AddFilesCommand}" />
+                                <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Import_ClearList}"
+                                        Command="{Binding ClearFinishedCommand}" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ContentControl>
+
+                    <!-- The queue -->
+                    <ContentControl Grid.Row="1" Style="{StaticResource Card}" Padding="0" Margin="0,16,0,0" Focusable="False">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="20,16,20,8">
+                                <TextBlock DockPanel.Dock="Right" FontSize="13">
+                                    <Hyperlink Command="{Binding ClearFinishedCommand}" Foreground="{StaticResource Brush.Primary}"
+                                               TextDecorations="None"><Run Text="{x:Static res:Strings.Import_ClearFinished}" /></Hyperlink>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource Text.Label}">
+                                    <Run Text="{x:Static res:Strings.Import_Queue}" /><Run Text=" (" /><Run Text="{Binding Queue.Count, Mode=OneWay}" /><Run Text=")" />
+                                </TextBlock>
+                            </DockPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding Queue}" Margin="8,0,8,8">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ImportQueueItem}">
+                                            <Border x:Name="Row" CornerRadius="5" Padding="12,8" Margin="0,0,0,2">
+                                                <DockPanel>
+                                                    <ContentPresenter DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource StateTag}"
+                                                                      VerticalAlignment="Top" Margin="8,0,0,0" />
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FileName}" ToolTip="{Binding Path}" FontWeight="Medium"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <!-- At most two lines, so long archive paths don't crowd the queue; all of it on hover. -->
+                                                        <TextBlock Text="{Binding Message}" ToolTip="{Binding Message}" Style="{StaticResource Text.Small}"
+                                                                   TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,2,0,0"
+                                                                   Visibility="{Binding Message, Converter={StaticResource NullToVisibility}}" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource Brush.PrimaryTransparent}" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </ContentControl>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</UserControl>

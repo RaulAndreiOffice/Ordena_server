@@ -141,6 +141,19 @@ public sealed class SearchServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Within_one_partner_the_newest_document_comes_first()
+    {
+        var repsol = Partner("Repsol S.A.");
+        Doc(repsol, "R-2", "2026-02-01");
+        Doc(repsol, "R-3", "2026-03-01");
+        Doc(repsol, "R-1", "2026-01-01");
+        Doc(Partner("Alfa"), "A-1", "2025-06-01");
+
+        Assert.Equal(["A-1", "R-3", "R-2", "R-1"],
+            await Numbers(new SearchQuery { SortBy = SearchSort.Partner, Descending = false }));
+    }
+
+    [Fact]
     public async Task Returns_the_grid_columns()
     {
         var partner = Partner("Telefónica España, S.A.U.");
@@ -152,6 +165,24 @@ public sealed class SearchServiceTests : IDisposable
             new DocumentListItem(document.Id, new DateOnly(2026, 3, 14), "Telefónica España, S.A.U.",
                 "A-2026/0123", DocType.FacturaRectificativa, Direction.Emitida, document.RelativePath),
             item);
+    }
+
+    [Fact]
+    public async Task The_year_filter_offers_each_year_with_documents_newest_first()
+    {
+        var telefonica = Partner("Telefónica España, S.A.U.");
+        Doc(telefonica, "A-1", "2024-05-01");
+        Doc(telefonica, "A-2", "2026-01-10");
+        Doc(telefonica, "A-3", "2026-12-31");
+        Doc(telefonica, "A-4", "2025-03-14", deleted: true);
+
+        Assert.Equal([2026, 2024], await _search.GetYearsAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Without_documents_there_are_no_years()
+    {
+        Assert.Empty(await _search.GetYearsAsync(Ct));
     }
 
     [Fact]

@@ -166,6 +166,19 @@ internal sealed class FileStorage : IFileStorage
         }
     }
 
+    public Result CreateFolder(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(path);
+            return Result.Ok();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return Result.Fail(ErrorCode.IoError, ex.Message);
+        }
+    }
+
     public IReadOnlyList<string> ListFiles(string folder) =>
         Directory.Exists(folder)
             ? Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
@@ -204,6 +217,8 @@ internal sealed class FileStorage : IFileStorage
     }
 
     public long GetLength(string path) => new FileInfo(path).Length;
+
+    public DateTime GetLastWriteTime(string path) => File.GetLastWriteTime(path);
 
     public bool FileExists(string path) => File.Exists(path);
 

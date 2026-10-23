@@ -14,6 +14,9 @@ internal interface IPartnerRepository
 
     Task<bool> AnyAsync(CancellationToken ct);
 
+    // Every partner, read-only: the bulk import compares a folder's names with them.
+    Task<IReadOnlyList<Partner>> ListAllAsync(CancellationToken ct);
+
     void Add(Partner partner);
 
     // Only to undo an import that created the partner and then failed.

@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Ordena</AssemblyName>
+    <RootNamespace>Ordena.Frontend</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <!-- Smart App Control blocks an unsigned Ordena.exe on the dev PC. Debug builds run as
+       "dotnet Ordena.dll" through the signed dotnet.exe instead; the Release exe is signed in step 6. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ordena.Backend\Ordena.Backend.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ordena.Tests" />
+  </ItemGroup>
+
+  <!-- Instrument Sans, the Kanakku kit's font, embedded; its license travels with the app. -->
+  <ItemGroup>
+    <Resource Include="Resources\Fonts\*.ttf" />
+    <None Update="Resources\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The Strings class (Resources/Strings.Designer.cs) is regenerated from Strings.resx whenever the resx
+       changes, so it never needs Visual Studio's designer. It is a normal source file, committed: WPF builds
+       a temporary assembly for the XAML ({x:Static res:Strings.Key}) from the project's own files, which a
+       class generated into obj during the build would be missing from. -->
+  <Target Name="GenerateStringsClass" BeforeTargets="MarkupCompilePass1;CoreCompile"
+          Inputs="Resources\Strings.resx" Outputs="Resources\Strings.Designer.cs">
+    <GenerateResource Sources="Resources\Strings.resx"
+                      OutputResources="$(IntermediateOutputPath)Strings.codegen.resources"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="Ordena.Frontend.Resources"
+                      StronglyTypedClassName="Strings"
+                      StronglyTypedManifestPrefix="Ordena.Frontend.Resources"
+                      StronglyTypedFileName="Resources\Strings.Designer.cs"
+                      PublicClass="true"
+                      ExecuteAsTool="false" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>

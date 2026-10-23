@@ -12,8 +12,15 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- The Frontend tests parse icon geometries with WPF's own parser. A framework reference rather than
+       UseWPF, which would also drop System.IO from the implicit usings. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ordena.Backend\Ordena.Backend.csproj" />
+    <ProjectReference Include="..\..\src\Ordena.Frontend\Ordena.Frontend.csproj" />
   </ItemGroup>
 
   <ItemGroup>

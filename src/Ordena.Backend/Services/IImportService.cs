@@ -14,5 +14,11 @@ public interface IImportService
     // - InvalidPartnerName: nothing is left of the name after normalization, for example "S.L."
     // - DuplicateNumber: the partner already has this number; call again with ConfirmDuplicate to import anyway
     // A blank partner or number, or a relative path, throws ArgumentException.
+    // With KeepSource the original is copied, not moved.
     Task<Result<ImportResult>> ImportAsync(ImportRequest request, CancellationToken ct);
+
+    // What the import screen asks as soon as a file comes up, before anything is typed:
+    // FileMissing, FileLocked, IoError, Empty, NotPdf, or AlreadyArchived / AlreadyInTrash
+    // (Detail is that document's id). Ok means the file can be imported. Nothing is changed.
+    Task<Result> CheckAsync(string sourcePath, CancellationToken ct);
 }

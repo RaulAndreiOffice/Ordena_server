@@ -29,19 +29,29 @@ internal sealed class ImportService(
         return Task.Run(() => ImportCoreAsync(request, ct), ct);
     }
 
+    public Task<Result> CheckAsync(string sourcePath, CancellationToken ct)
+    {
+        if (!Path.IsPathFullyQualified(sourcePath))
+            throw new ArgumentException($"The source must be an absolute path: '{sourcePath}'.", nameof(sourcePath));
+
+        return Task.Run(async () =>
+        {
+            var pdf = await ReadPdfAsync(sourcePath, ct).ConfigureAwait(false);
+            if (!pdf.IsSuccess)
+                return Result.Fail(pdf.Error.Value, pdf.Detail);
+
+            await using var uow = uowFactory.Create();
+            return await FindArchivedAsync(uow, pdf.Value.Sha256, ct).ConfigureAwait(false) ?? Result.Ok();
+        }, ct);
+    }
+
     private async Task<Result<ImportResult>> ImportCoreAsync(ImportRequest request, CancellationToken ct)
     {
         // The archive gets exactly these bytes: the ones checked and hashed here.
-        var read = await storage.ReadAsync(request.SourcePath, ct).ConfigureAwait(false);
-        if (!read.IsSuccess)
-            return Fail(read.Error.Value, read.Detail);
-
-        var content = read.Value;
-        if (content.Length == 0)
-            return Fail(ErrorCode.Empty, request.SourcePath);
-        if (!PdfSignature.IsPdf(content))
-            return Fail(ErrorCode.NotPdf, request.SourcePath);
-        var sha256 = Sha256Hasher.Compute(content);
+        var pdf = await ReadPdfAsync(request.SourcePath, ct).ConfigureAwait(false);
+        if (!pdf.IsSuccess)
+            return Fail(pdf.Error.Value, pdf.Detail);
+        var (content, sha256) = pdf.Value;
 
         await using var uow = uowFactory.Create();
 
@@ -50,13 +60,9 @@ internal sealed class ImportService(
             return Fail(root.Error.Value, root.Detail);
         var archiveRoot = root.Value;
 
-        // Deleted documents count too: a file already in _Papelera is restored, not imported again.
-        var existing = await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false);
-        if (existing is not null)
-        {
-            var error = existing.DeletedAt is null ? ErrorCode.AlreadyArchived : ErrorCode.AlreadyInTrash;
-            return Fail(error, existing.Id.ToString(CultureInfo.InvariantCulture));
-        }
+        var archived = await FindArchivedAsync(uow, sha256, ct).ConfigureAwait(false);
+        if (archived is not null && !archived.IsSuccess)
+            return Fail(archived.Error.Value, archived.Detail);
 
         var partner = await partnerResolver.GetOrCreateAsync(uow, request.PartnerName, ct).ConfigureAwait(false);
         if (!partner.IsSuccess)
@@ -84,17 +90,47 @@ internal sealed class ImportService(
             UpdatedAt = now,
         };
 
-        var archived = await archiveMover.ImportAsync(uow, document, request.SourcePath, content, archiveRoot, ct)
+        var moved = await archiveMover.ImportAsync(uow, document, request.SourcePath, content, archiveRoot, ct)
             .ConfigureAwait(false);
-        if (!archived.IsSuccess)
-            return Fail(archived.Error.Value, archived.Detail);
+        if (!moved.IsSuccess)
+            return Fail(moved.Error.Value, moved.Detail);
 
         // The import is committed, so this step is no longer cancellable.
-        var sourceDeleted = await storage.TryDeleteAsync(request.SourcePath, CancellationToken.None).ConfigureAwait(false);
+        var sourceDeleted = !request.KeepSource
+            && await storage.TryDeleteAsync(request.SourcePath, CancellationToken.None).ConfigureAwait(false);
 
         return Result.Ok(new ImportResult(document.ToListItem(), sourceDeleted));
     }
 
+    // The whole file, checked to be a non-empty PDF, with its SHA-256.
+    private async Task<Result<PdfFile>> ReadPdfAsync(string path, CancellationToken ct)
+    {
+        var read = await storage.ReadAsync(path, ct).ConfigureAwait(false);
+        if (!read.IsSuccess)
+            return Result.Fail<PdfFile>(read.Error.Value, read.Detail);
+
+        var content = read.Value;
+        if (content.Length == 0)
+            return Result.Fail<PdfFile>(ErrorCode.Empty, path);
+        if (!PdfSignature.IsPdf(content))
+            return Result.Fail<PdfFile>(ErrorCode.NotPdf, path);
+        return Result.Ok(new PdfFile(content, Sha256Hasher.Compute(content)));
+    }
+
+    // Deleted documents count too: a file already in _Papelera is restored, not imported again.
+    // Null when the file isn't archived yet.
+    private static async Task<Result?> FindArchivedAsync(IUnitOfWork uow, string sha256, CancellationToken ct)
+    {
+        var existing = await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false);
+        if (existing is null)
+            return null;
+
+        var error = existing.DeletedAt is null ? ErrorCode.AlreadyArchived : ErrorCode.AlreadyInTrash;
+        return Result.Fail(error, existing.Id.ToString(CultureInfo.InvariantCulture));
+    }
+
     private static Result<ImportResult> Fail(ErrorCode error, string? detail) =>
         Result.Fail<ImportResult>(error, detail);
+
+    private sealed record PdfFile(byte[] Content, string Sha256);
 }

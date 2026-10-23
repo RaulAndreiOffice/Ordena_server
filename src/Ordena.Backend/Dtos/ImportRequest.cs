@@ -18,4 +18,7 @@ public sealed record ImportRequest
 
     // Set after the user confirmed the DuplicateNumber warning: request with { ConfirmDuplicate = true }.
     public bool ConfirmDuplicate { get; init; }
+
+    // Copy mode: the original stays where it is (bulk import of an old archive, which is its backup).
+    public bool KeepSource { get; init; }
 }

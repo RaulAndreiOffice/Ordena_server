@@ -24,6 +24,9 @@ internal interface IFileStorage
     // False when it can't be deleted; the caller only warns.
     Task<bool> TryDeleteAsync(string path, CancellationToken ct);
 
+    // Creates the folder and its parents; Ok when it already exists. IoError when it can't be created.
+    Result CreateFolder(string path);
+
     // Full paths of every file under the folder, in all subfolders. Empty when the folder doesn't exist.
     IReadOnlyList<string> ListFiles(string folder);
 
@@ -34,6 +37,9 @@ internal interface IFileStorage
     long? AvailableFreeSpace(string path);
 
     long GetLength(string path);
+
+    // Local time, as Explorer shows it: the bulk import's date for names without one.
+    DateTime GetLastWriteTime(string path);
     bool FileExists(string path);
     bool DirectoryExists(string path);
 }

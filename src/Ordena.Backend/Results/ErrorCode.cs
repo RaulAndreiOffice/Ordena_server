@@ -31,4 +31,7 @@ public enum ErrorCode
 
     // The target is the archive itself, a folder inside it, or a folder that contains it.
     InvalidArchiveFolder,
+
+    // Bulk import: a file-name pattern that can't be used. Detail is the reason (see FileNamePattern.Create).
+    InvalidNamePattern,
 }

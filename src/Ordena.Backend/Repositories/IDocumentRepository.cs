@@ -28,6 +28,12 @@ internal interface IDocumentRepository
     // Only deleted, read-only, the most recently deleted first. For the trash.
     Task<IReadOnlyList<DocumentDetails>> ListDeletedAsync(CancellationToken ct);
 
+    // Each active document's partner and number, normalized: the bulk import marks numbers that exist.
+    Task<IReadOnlyList<(string PartnerNameNorm, string DocNumberNorm)>> GetNumberKeysAsync(CancellationToken ct);
+
+    // The years that have documents, not deleted ones, the newest first. For the year filter.
+    Task<IReadOnlyList<int>> GetYearsAsync(CancellationToken ct);
+
     // Not deleted, read-only, only the grid columns.
     Task<IReadOnlyList<DocumentListItem>> SearchAsync(DocumentSearch search, int limit, CancellationToken ct);
     Task<int> CountAsync(DocumentSearch search, CancellationToken ct);

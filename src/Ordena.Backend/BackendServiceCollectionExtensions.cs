@@ -42,6 +42,7 @@ public static class BackendServiceCollectionExtensions
         services.AddSingleton<IPartnerService, PartnerService>();
         services.AddSingleton<ISearchService, SearchService>();
         services.AddSingleton<IImportService, ImportService>();
+        services.AddSingleton<IBulkImportService, BulkImportService>();
         services.AddSingleton<IDocumentService, DocumentService>();
         services.AddSingleton<IArchiveService, ArchiveService>();
         services.AddSingleton<IMaintenanceService, MaintenanceService>();

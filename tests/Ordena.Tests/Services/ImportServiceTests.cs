@@ -42,6 +42,21 @@ public sealed class ImportServiceTests : IDisposable
         _db.Dispose();
     }
 
+    // Copy mode, for the bulk import of an old archive: the original stays as the user's backup.
+    [Fact]
+    public async Task With_KeepSource_the_original_stays_where_it_was()
+    {
+        var content = TestPdf.Bytes("telefonica");
+        var source = _downloads.WriteFile("scan 14-03.pdf", content);
+
+        var result = await _import.ImportAsync(Request(source) with { KeepSource = true }, Ct);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value.SourceDeleted);
+        Assert.Equal([TelefonicaPath], _archive.Files());
+        Assert.Equal(content, File.ReadAllBytes(source));
+    }
+
     [Fact]
     public async Task Moves_the_pdf_into_the_archive_and_adds_its_row()
     {
@@ -257,6 +272,42 @@ public sealed class ImportServiceTests : IDisposable
         var source = _downloads.WriteFile("a.pdf", TestPdf.Bytes("a"));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _import.ImportAsync(Request(source), Ct));
+    }
+
+    [Fact]
+    public async Task Check_passes_a_new_pdf_and_changes_nothing()
+    {
+        var source = _downloads.WriteFile("a.pdf", TestPdf.Bytes("new"));
+
+        var check = await _import.CheckAsync(source, Ct);
+
+        Assert.True(check.IsSuccess);
+        Assert.True(File.Exists(source));
+        AssertNothingInTheArchive();
+    }
+
+    [Fact]
+    public async Task Check_finds_what_the_import_would_refuse()
+    {
+        Assert.Equal(ErrorCode.Empty, (await _import.CheckAsync(_downloads.WriteFile("empty.pdf", []), Ct)).Error);
+        Assert.Equal(ErrorCode.NotPdf, (await _import.CheckAsync(_downloads.WriteFile("photo.pdf", [0xFF, 0xD8, 0xFF]), Ct)).Error);
+        Assert.Equal(ErrorCode.FileMissing, (await _import.CheckAsync(_downloads.Path("gone.pdf"), Ct)).Error);
+    }
+
+    [Fact]
+    public async Task Check_reports_an_archived_file_with_its_id_and_one_in_the_trash()
+    {
+        var content = TestPdf.Bytes("archived");
+        var first = await _import.ImportAsync(Request(_downloads.WriteFile("a.pdf", content)), Ct);
+        var copy = _downloads.WriteFile("copy of a.pdf", content);
+
+        var archived = await _import.CheckAsync(copy, Ct);
+        _db.Scalar("UPDATE Documents SET DeletedAt = '2026-03-16 10:00:00'");
+        var trashed = await _import.CheckAsync(copy, Ct);
+
+        Assert.Equal(ErrorCode.AlreadyArchived, archived.Error);
+        Assert.Equal(first.Value.Document.Id.ToString(CultureInfo.InvariantCulture), archived.Detail);
+        Assert.Equal(ErrorCode.AlreadyInTrash, trashed.Error);
     }
 
     private async Task AssertNotImportedAsync(string source, ErrorCode expected, string partner = Telefonica)

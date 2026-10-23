@@ -27,6 +27,12 @@ internal sealed class SearchService(IUnitOfWorkFactory uowFactory) : ISearchServ
         }, ct);
     }
 
+    public Task<IReadOnlyList<int>> GetYearsAsync(CancellationToken ct) => Task.Run(async () =>
+    {
+        await using var uow = uowFactory.Create();
+        return await uow.Documents.GetYearsAsync(ct).ConfigureAwait(false);
+    }, ct);
+
     private static DocumentSearch ToDocumentSearch(SearchQuery query)
     {
         DateOnly? from = null, toExclusive = null;
