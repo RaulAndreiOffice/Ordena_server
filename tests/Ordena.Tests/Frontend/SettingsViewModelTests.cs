@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Ordena.Frontend.Services;
 using Ordena.Frontend.ViewModels;
 using Ordena.Tests.TestSupport;
@@ -79,7 +80,11 @@ public sealed class SettingsViewModelTests : IDisposable
 
     private async Task<SettingsViewModel> OpenAsync()
     {
-        var page = new SettingsViewModel(_settings, new Localizer(), _lifetime);
+        var localizer = new Localizer();
+        var archive = new ArchiveSettingsViewModel(new FakeArchiveState(), new FakeMaintenanceService(), new FakeArchiveService(),
+            _settings, new FakeDocumentService(), new FakeFilePicker(), new FakeDialogs(), localizer,
+            new WeakReferenceMessenger(), new FakeNavigation());
+        var page = new SettingsViewModel(_settings, localizer, _lifetime, archive);
         await page.OnNavigatedToAsync();
         return page;
     }

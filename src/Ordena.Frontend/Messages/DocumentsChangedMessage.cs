@@ -6,6 +6,9 @@ public enum DocumentsChange
 
     // A whole folder ("Importar carpeta"); DocumentId is 0.
     BulkImported,
+
+    // PDFs found in the archive by "Comprobar carpeta" and added where they are; DocumentId is 0.
+    Registered,
     Edited,
     Deleted,
     Restored,

@@ -154,7 +154,10 @@ internal sealed class BulkImportService(
         foreach (var component in Enumerable.Range(0, nodes.Count).GroupBy(Find))
         {
             var members = component.Select(i => nodes[i]).ToList();
-            var inFolder = members.Where(m => !m.Existing).OrderByDescending(m => m.Count).ToList();
+            // The spelling used most; on a tie the longer one, usually the more complete name.
+            var inFolder = members.Where(m => !m.Existing)
+                .OrderByDescending(m => m.Count).ThenByDescending(m => m.Name.Length)
+                .ToList();
             var archive = members.Where(m => m.Existing).ToList();
             if (inFolder.Count == 0)
                 continue;
@@ -224,6 +227,7 @@ internal sealed class BulkImportService(
                     IssueDate = item.IssueDate,
                     Type = item.Type,
                     Direction = run.Direction,
+                    IsPaid = run.MarkPaid,
                     ConfirmDuplicate = item.IncludeDuplicateNumber,
                     KeepSource = true,
                 }, CancellationToken.None).ConfigureAwait(false);

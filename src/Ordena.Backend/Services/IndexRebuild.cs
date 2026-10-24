@@ -67,14 +67,7 @@ internal sealed class IndexRebuild(
         {
             foreach (var folder in indexed.Select(f => f.Parsed.PartnerFolder).Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                var name = folder.Replace('-', ' ');
-                var partner = new Partner
-                {
-                    Name = name,
-                    NameNorm = TextNormalizer.NormalizeName(name),
-                    FolderName = folder,
-                    CreatedAt = now,
-                };
+                var partner = NewPartner(folder, now);
                 partners[folder] = partner;
                 uow.Partners.Add(partner);
             }
@@ -86,22 +79,9 @@ internal sealed class IndexRebuild(
             await using var uow = uowFactory.Create();
             foreach (var (path, parsed, length, sha256) in batch)
             {
-                uow.Documents.Add(new Document
-                {
-                    Sha256 = sha256,
-                    PartnerId = partners[parsed.PartnerFolder].Id,
-                    DocNumber = parsed.DocNumber,
-                    DocNumberNorm = TextNormalizer.NormalizeNumber(parsed.DocNumber),
-                    IssueDate = parsed.IssueDate,
-                    Type = parsed.Type,
-                    Direction = parsed.Direction,
-                    RelativePath = ArchiveNaming.ToRelativePath(archiveRoot, path),
-                    OriginalName = Path.GetFileName(path),
-                    FileSizeBytes = length,
-                    ImportedAt = now,
-                    UpdatedAt = now,
-                    DeletedAt = parsed.InTrash ? now : null,
-                });
+                var document = NewDocument(parsed, ArchiveNaming.ToRelativePath(archiveRoot, path), length, sha256, now);
+                document.PartnerId = partners[parsed.PartnerFolder].Id;
+                uow.Documents.Add(document);
             }
             await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
         }
@@ -112,8 +92,40 @@ internal sealed class IndexRebuild(
         return new RebuildReport(indexed.Count, partners.Count, unrecognized, duplicates);
     }
 
+    // A partner known only from its folder: "Telefonica-Espana" is named "Telefonica Espana".
+    internal static Partner NewPartner(string folder, DateTime now)
+    {
+        var name = folder.Replace('-', ' ');
+        return new Partner
+        {
+            Name = name,
+            NameNorm = TextNormalizer.NormalizeName(name),
+            FolderName = folder,
+            CreatedAt = now,
+        };
+    }
+
+    // The document a file already in the archive stands for, at relativePath; the caller sets its partner.
+    // Paid: a file name can't say otherwise, and what is already archived is normally settled.
+    internal static Document NewDocument(ArchivePath parsed, string relativePath, long length, string sha256, DateTime now) => new()
+    {
+        Sha256 = sha256,
+        DocNumber = parsed.DocNumber,
+        DocNumberNorm = TextNormalizer.NormalizeNumber(parsed.DocNumber),
+        IssueDate = parsed.IssueDate,
+        Type = parsed.Type,
+        Direction = parsed.Direction,
+        IsPaid = true,
+        RelativePath = relativePath,
+        OriginalName = Path.GetFileName(relativePath),
+        FileSizeBytes = length,
+        ImportedAt = now,
+        UpdatedAt = now,
+        DeletedAt = parsed.InTrash ? now : null,
+    };
+
     // Null for a file another program holds open; it is reported, not indexed.
-    private static string? TryHash(string path)
+    internal static string? TryHash(string path)
     {
         try
         {

@@ -25,6 +25,7 @@ public partial class App : Application
 {
     private IHost? _host;
     private ILogger<App>? _logger;
+    private SingleInstance? _instance;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -67,6 +68,9 @@ public partial class App : Application
             }
 
             _host.StopAsync().GetAwaiter().GetResult();
+
+            // Let go first, or the new instance would find this one still running and hand over to it.
+            _instance?.Dispose();
             if (restart)
                 StartNewInstance();
             _host.Dispose();
@@ -79,6 +83,18 @@ public partial class App : Application
     private async Task<bool> StartAsync()
     {
         _host = BuildHost();
+
+        // Already open on this data: that window comes to the front, and this start ends here, before
+        // touching the database. Taken on the UI thread, which also lets go of it in OnExit.
+        _instance = SingleInstance.TryAcquire(
+            _host.Services.GetRequiredService<IAppPaths>().Root, () => Dispatcher.InvokeAsync(BringToFront));
+        if (_instance is null)
+        {
+            _host.Dispose();
+            _host = null; // nothing to back up on exit
+            return false;
+        }
+
         await _host.StartAsync();
         var services = _host.Services;
         _logger = services.GetRequiredService<ILogger<App>>();
@@ -199,26 +215,38 @@ public partial class App : Application
         }
     }
 
-    // "La carpeta de facturas no está disponible": ask to retry until it is back, or go on without it.
+    // "La carpeta de facturas no está disponible": try again, find it where it was moved, or go on without it.
+    // Without it, search works and the shell's banner offers the same until the folder is back.
     private static async Task WaitForArchiveAsync(IServiceProvider services)
     {
-        var maintenance = services.GetRequiredService<IMaintenanceService>();
-        var status = await maintenance.GetArchiveStatusAsync(CancellationToken.None);
-        if (status != ArchiveStatus.Unavailable)
+        var archive = services.GetRequiredService<IArchiveState>();
+        await archive.RefreshAsync();
+        if (archive.IsAvailable)
             return;
 
         var dialogs = services.GetRequiredService<IDialogService>();
         var localizer = services.GetRequiredService<ILocalizer>();
-        var root = (await services.GetRequiredService<ISettingsService>().GetAsync(CancellationToken.None)).ArchiveRoot;
-        while (status == ArchiveStatus.Unavailable)
+        while (!archive.IsAvailable)
         {
-            if (!await dialogs.ConfirmAsync(localizer.Format("Startup_ArchiveUnavailable", root)))
-                return;
-            status = await maintenance.GetArchiveStatusAsync(CancellationToken.None);
+            var choice = await dialogs.ChooseAsync(localizer.Format("Startup_ArchiveUnavailable", archive.Root),
+                localizer.Get("Archive_Retry"), localizer.Get("Archive_Locate"), localizer.Get("Archive_Continue"));
+            if (choice == 0)
+                await archive.RefreshAsync();
+            else if (choice == 1)
+                await archive.LocateAsync();
+            else
+                return; // Continuar, or the window closed
         }
+    }
 
-        // Back after startup skipped it: settle the moves a crash interrupted while it was away.
-        await maintenance.RecoverInterruptedMovesAsync(CancellationToken.None);
+    // Ordena was started again: the window already open comes back instead, the main one or first run.
+    private void BringToFront()
+    {
+        if (Windows.OfType<Window>().LastOrDefault(w => w.IsVisible) is not { } window)
+            return;
+        if (window.WindowState == WindowState.Minimized)
+            window.WindowState = WindowState.Normal;
+        window.Activate();
     }
 
     private async Task WarmUpAsync(IMaintenanceService maintenance)

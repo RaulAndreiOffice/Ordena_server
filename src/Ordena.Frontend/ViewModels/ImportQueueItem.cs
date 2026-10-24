@@ -10,12 +10,14 @@ public enum ImportState
     Failed,
 }
 
-// One dropped PDF in the import queue. KeepSource: copied, not moved (see FilesDroppedMessage).
-public sealed partial class ImportQueueItem(string path, bool keepSource = false) : ObservableObject
+// One dropped PDF in the import queue. KeepSource: copied, not moved; StartsPaid: its form starts
+// ticked as paid (see FilesDroppedMessage).
+public sealed partial class ImportQueueItem(string path, bool keepSource = false, bool startsPaid = false) : ObservableObject
 {
     public string Path { get; } = path;
     public string FileName { get; } = System.IO.Path.GetFileName(path);
     public bool KeepSource { get; } = keepSource;
+    public bool StartsPaid { get; } = startsPaid;
 
     [ObservableProperty]
     private ImportState _state;

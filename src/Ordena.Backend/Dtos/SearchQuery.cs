@@ -15,6 +15,9 @@ public sealed record SearchQuery
     public DocType? Type { get; init; }
     public Direction? Direction { get; init; }
 
+    // «Ver solo pendientes»: only the documents not paid (or collected) yet.
+    public bool PendingOnly { get; init; }
+
     public SearchSort SortBy { get; init; } = SearchSort.IssueDate;
     public bool Descending { get; init; } = true;
 }

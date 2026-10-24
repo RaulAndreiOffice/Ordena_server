@@ -33,14 +33,18 @@ public sealed partial class BulkImportViewModel : PageViewModel
     private readonly ILocalizer _localizer;
     private readonly IMessenger _messenger;
     private readonly INavigationService _navigation;
+    private readonly IArchiveState _archive;
 
     // The options the current preview was analyzed with; re-analysis changes only the pattern.
     private BulkImportOptions? _options;
     private CancellationTokenSource? _pendingPattern;
     private CancellationTokenSource? _run;
 
-    // Set while the page itself picks a pattern card, so that doesn't analyze again.
+    // Set while the page itself picks a pattern card or clears the typed pattern, so that doesn't analyze again.
     private bool _settingPattern;
+
+    // Set while many rows are ticked at once, so the import count is taken once at the end.
+    private bool _batchingRows;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StepNumber))]
@@ -60,6 +64,11 @@ public sealed partial class BulkImportViewModel : PageViewModel
 
     [ObservableProperty]
     private bool _partnerFromFolder;
+
+    // «Marcar todas como pagadas o cobradas»: an old archive is normally settled, so on by default. Off, every
+    // imported document is pending and shows first in Buscar.
+    [ObservableProperty]
+    private bool _markPaid = true;
 
     // Step 2
     [ObservableProperty]
@@ -101,9 +110,13 @@ public sealed partial class BulkImportViewModel : PageViewModel
     [ObservableProperty]
     private IReadOnlyList<BulkRowViewModel> _filteredRows = [];
 
-    // "2.871 se importarán"
+    // "Se importarán 2.871 de 3.000"
     [ObservableProperty]
     private string _importCountText = "";
+
+    // Some names had no date: "Usar la fecha del archivo" is offered.
+    [ObservableProperty]
+    private bool _hasCheckDateRows;
 
     // Step 4
     [ObservableProperty]
@@ -122,7 +135,10 @@ public sealed partial class BulkImportViewModel : PageViewModel
     [ObservableProperty]
     private string _progressText = "";
 
-    // The report
+    // The report: "Importación terminada", or "Importación cancelada".
+    [ObservableProperty]
+    private string _reportTitle = "";
+
     [ObservableProperty]
     private string _reportText = "";
 
@@ -140,7 +156,8 @@ public sealed partial class BulkImportViewModel : PageViewModel
         IDialogService dialogs,
         ILocalizer localizer,
         IMessenger messenger,
-        INavigationService navigation)
+        INavigationService navigation,
+        IArchiveState archive)
     {
         _bulk = bulk;
         _picker = picker;
@@ -148,12 +165,15 @@ public sealed partial class BulkImportViewModel : PageViewModel
         _localizer = localizer;
         _messenger = messenger;
         _navigation = navigation;
+        _archive = archive;
         Types = Enum.GetValues<DocType>().Select(t => new TypeOption(t, localizer.Enum(t))).ToList();
         _selectedType = Types[0];
         DateFormats = NamePatterns.DateFormats;
     }
 
     public override string Title => _localizer.Get("Page_BulkImport");
+
+    public override bool NeedsArchive => true;
 
     public IReadOnlyList<TypeOption> Types { get; }
     public IReadOnlyList<string> DateFormats { get; }
@@ -185,6 +205,8 @@ public sealed partial class BulkImportViewModel : PageViewModel
     [RelayCommand(CanExecute = nameof(HasFolder))]
     private async Task AnalyzeAsync()
     {
+        // A re-analysis still on its way belongs to the folder analyzed before.
+        _pendingPattern?.Cancel();
         var options = new BulkImportOptions
         {
             Folder = Folder.Trim(),
@@ -206,10 +228,10 @@ public sealed partial class BulkImportViewModel : PageViewModel
         }
 
         _options = options;
+        _settingPattern = true;
         UseCustomPattern = false;
         PatternError = null;
         Show(preview.Value);
-        _settingPattern = true;
         Patterns = preview.Value.Detected.Select(ToOption).ToList();
         SelectedPattern = Patterns.FirstOrDefault();
         _settingPattern = false;
@@ -232,7 +254,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
 
     partial void OnUseCustomPatternChanged(bool value)
     {
-        if (_options is null)
+        if (_options is null || _settingPattern)
             return;
         PendingAnalysis = value
             ? ReanalyzeAsync(CustomPattern, CustomDateFormat, TimeSpan.Zero)
@@ -314,8 +336,10 @@ public sealed partial class BulkImportViewModel : PageViewModel
     [RelayCommand]
     private void IncludeFileDates()
     {
+        _batchingRows = true;
         foreach (var row in Rows.Where(r => r.Status == BulkRowStatus.CheckDate))
             row.Include = true;
+        _batchingRows = false;
         Recount();
     }
 
@@ -329,7 +353,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
             .Select(r => new BulkImportItem(r.Path, r.Date!.Value, r.Partner.Trim(), r.Number.Trim(), r.Type.Type,
                 IncludeDuplicateNumber: r.Status == BulkRowStatus.NumberExists))
             .ToList();
-        var run = new BulkImportRun(_options!.Direction, items, PartnerMap());
+        var run = new BulkImportRun(_options!.Direction, items, PartnerMap(), MarkPaid);
 
         _run = new CancellationTokenSource();
         Done = 0;
@@ -342,7 +366,17 @@ public sealed partial class BulkImportViewModel : PageViewModel
             ProgressText = _localizer.Format("Bulk_Progress", p.Done, p.Total, p.CurrentFile);
         });
 
-        var report = await _bulk.RunAsync(run, progress, _run.Token);
+        // Meanwhile the archive mustn't be moved or checked (Ajustes asks to wait).
+        BulkImportReport report;
+        _archive.IsImporting = true;
+        try
+        {
+            report = await _bulk.RunAsync(run, progress, _run.Token);
+        }
+        finally
+        {
+            _archive.IsImporting = false;
+        }
 
         ShowReport(report, items);
         _messenger.Send(new DocumentsChangedMessage(DocumentsChange.BulkImported, 0));
@@ -358,7 +392,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
     private async Task SendToManualAsync()
     {
         await _navigation.NavigateToAsync<ImportViewModel>();
-        _messenger.Send(new FilesDroppedMessage(LeftOut, KeepSource: true));
+        _messenger.Send(new FilesDroppedMessage(LeftOut, KeepSource: true, StartsPaid: MarkPaid));
     }
 
     private bool HasLeftOut() => LeftOut.Count > 0;
@@ -427,7 +461,11 @@ public sealed partial class BulkImportViewModel : PageViewModel
     }
 
     private void OnRowStatusChanged(object? sender, EventArgs e) => Recount();
-    private void OnRowIncludeChanged(object? sender, EventArgs e) => CountImports();
+    private void OnRowIncludeChanged(object? sender, EventArgs e)
+    {
+        if (!_batchingRows)
+            CountImports();
+    }
 
     // The filter's counts and what will be imported, after any change to the rows.
     private void Recount()
@@ -443,6 +481,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
         ];
         SelectedStatusFilter = StatusFilters.FirstOrDefault(f => f.Status == current) ?? StatusFilters[0];
         Filter();
+        HasCheckDateRows = Rows.Any(r => r.Status == BulkRowStatus.CheckDate);
         CountImports();
     }
 
@@ -464,6 +503,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        ReportTitle = _localizer.Get(report.Cancelled ? "Bulk_ReportTitleCancelled" : "Bulk_ReportTitle");
         ReportText = _localizer.Format(report.Cancelled ? "Bulk_ReportCancelled" : "Bulk_Report",
             report.Imported, report.Duplicates.Count, report.NumberExists.Count, report.Failed.Count,
             report.Elapsed.TotalSeconds < 60 ? $"{report.Elapsed.TotalSeconds:0} s" : $"{report.Elapsed:m\\:ss} min");

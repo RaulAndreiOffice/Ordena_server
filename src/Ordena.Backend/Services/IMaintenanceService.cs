@@ -33,4 +33,9 @@ public interface IMaintenanceService
     // where they belong; documents whose file is nowhere and PDFs no document points to are listed.
     // ArchiveUnavailable when the archive isn't there.
     Task<Result<ArchiveCheckReport>> CheckArchiveAsync(CancellationToken ct);
+
+    // "Añadir a Ordena" for the check's unknown PDFs (full paths): those whose path follows the app's naming
+    // are registered where they are; the rest come back in Remaining, for the manual import queue.
+    // ArchiveUnavailable when the archive isn't there.
+    Task<Result<RegisterReport>> RegisterFilesAsync(IReadOnlyList<string> paths, CancellationToken ct);
 }

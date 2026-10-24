@@ -36,6 +36,7 @@ public static class BackendServiceCollectionExtensions
         services.AddSingleton<ArchiveMover>();
         services.AddSingleton<JournalRecovery>();
         services.AddSingleton<ArchiveCheck>();
+        services.AddSingleton<FileRegistration>();
         services.AddSingleton<IndexRebuild>();
 
         services.AddSingleton<ISettingsService, SettingsService>();

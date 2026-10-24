@@ -1,5 +1,5 @@
 <!-- The fields of one document, shared by the import screen and the edit dialog: Recibida/Emitida,
-     the partner (with suggestions), number, date and type. DataContext: DocumentFormViewModel. -->
+     the partner (with suggestions), number, date, type, and whether it is paid. DataContext: DocumentFormViewModel. -->
 <UserControl x:Class="Ordena.Frontend.Views.Shared.DocumentFormView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -16,11 +16,17 @@
     </UserControl.Resources>
 
     <StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <RadioButton Content="{x:Static res:Strings.Direction_Recibida}" IsChecked="{Binding IsReceived}"
-                         Margin="0,0,24,0" />
-            <RadioButton Content="{x:Static res:Strings.Direction_Emitida}" IsChecked="{Binding IsIssued}" />
-        </StackPanel>
+        <DockPanel Margin="0,12,0,0">
+            <!-- «Pagada» or «Cobrada», as the direction beside it says. Unticked, the document is pending,
+                 and Buscar shows it first. MinWidth 0: the theme's 120 each wouldn't leave room for all three. -->
+            <CheckBox DockPanel.Dock="Right" Content="{Binding PaidLabel}" IsChecked="{Binding IsPaid}" MinWidth="0"
+                      AutomationProperties.Name="{Binding PaidLabel}" />
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="{x:Static res:Strings.Direction_Recibida}" IsChecked="{Binding IsReceived}"
+                             MinWidth="0" Margin="0,0,24,0" />
+                <RadioButton Content="{x:Static res:Strings.Direction_Emitida}" IsChecked="{Binding IsIssued}" MinWidth="0" />
+            </StackPanel>
+        </DockPanel>
 
         <TextBlock Style="{StaticResource FieldLabel}">
             <Run Text="{Binding PartnerLabel, Mode=OneWay}" /><Run Text=" *" Foreground="{StaticResource Brush.Error}" />

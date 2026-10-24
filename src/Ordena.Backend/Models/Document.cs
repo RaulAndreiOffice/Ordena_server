@@ -22,6 +22,10 @@ public class Document
     public DocType Type { get; set; }
     public Direction Direction { get; set; }
 
+    // Paid (received) or collected (issued). False is pending, and Buscar shows those first.
+    // Not part of the file name: changing it never moves the file.
+    public bool IsPaid { get; set; }
+
     // Relative to the archive root, so the archive can be moved.
     public string RelativePath { get; set; } = string.Empty;
 

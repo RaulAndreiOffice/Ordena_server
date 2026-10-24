@@ -39,7 +39,7 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
             .OrderByDescending(d => d.DeletedAt).ThenByDescending(d => d.Id)
             .Select(d => new DocumentDetails(
                 d.Id, d.Partner.Name, d.DocNumber, d.IssueDate, d.Type, d.Direction,
-                d.RelativePath, d.OriginalName, d.ImportedAt, d.UpdatedAt, d.DeletedAt))
+                d.RelativePath, d.OriginalName, d.ImportedAt, d.UpdatedAt, d.DeletedAt, d.IsPaid))
             .ToListAsync(ct).ConfigureAwait(false);
 
     public async Task<IReadOnlyList<(string PartnerNameNorm, string DocNumberNorm)>> GetNumberKeysAsync(CancellationToken ct) =>
@@ -62,11 +62,14 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
         await Sort(Filter(search), search.SortBy, search.Descending)
             .Take(limit)
             .Select(d => new DocumentListItem(
-                d.Id, d.IssueDate, d.Partner.Name, d.DocNumber, d.Type, d.Direction, d.RelativePath))
+                d.Id, d.IssueDate, d.Partner.Name, d.DocNumber, d.Type, d.Direction, d.RelativePath, d.IsPaid))
             .ToListAsync(ct).ConfigureAwait(false);
 
     public Task<int> CountAsync(DocumentSearch search, CancellationToken ct) =>
         Filter(search).CountAsync(ct);
+
+    public Task<int> CountPendingAsync(CancellationToken ct) =>
+        db.Documents.CountAsync(d => d.DeletedAt == null && !d.IsPaid, ct);
 
     public void Add(Document document) => db.Documents.Add(document);
 
@@ -100,25 +103,33 @@ internal sealed class DocumentRepository(AppDbContext db) : IDocumentRepository
             query = query.Where(d => d.Type == type);
         if (search.Direction is { } direction)
             query = query.Where(d => d.Direction == direction);
+        if (search.PendingOnly)
+            query = query.Where(d => !d.IsPaid);
 
         return query;
     }
 
-    private static IQueryable<Document> Sort(IQueryable<Document> query, SearchSort sortBy, bool descending) => sortBy switch
-    {
-        SearchSort.IssueDate => Order(query, d => d.IssueDate, descending),
-        SearchSort.Partner => Order(query, d => d.Partner.NameNorm, descending),
-        SearchSort.DocNumber => Order(query, d => d.DocNumberNorm, descending),
-        SearchSort.Type => Order(query, d => d.Type, descending),
-        SearchSort.Direction => Order(query, d => d.Direction, descending),
-        _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null),
-    };
-
+    // Pending documents first whatever the column, so they are always in sight (false sorts before true).
     // Rows with the same key: the newest document first (a partner's invoices by date), then by Id, so
-    // they keep the same order from one query to the next.
-    private static IQueryable<Document> Order<TKey>(
-        IQueryable<Document> query, Expression<Func<Document, TKey>> key, bool descending) =>
-        (descending ? query.OrderByDescending(key) : query.OrderBy(key))
-            .ThenByDescending(d => d.IssueDate)
-            .ThenByDescending(d => d.Id);
+    // they keep the same order from one query to the next. The default order (by date, newest first) is
+    // exactly the index on (IsPaid, IssueDate DESC, Id DESC), so its first 500 rows need no sorting; the date
+    // isn't repeated as a tie-break there, which would make SQLite sort again.
+    private static IQueryable<Document> Sort(IQueryable<Document> query, SearchSort sortBy, bool descending)
+    {
+        var pendingFirst = query.OrderBy(d => d.IsPaid);
+        var sorted = sortBy switch
+        {
+            SearchSort.IssueDate => By(pendingFirst, d => d.IssueDate, descending),
+            SearchSort.Partner => By(pendingFirst, d => d.Partner.NameNorm, descending).ThenByDescending(d => d.IssueDate),
+            SearchSort.DocNumber => By(pendingFirst, d => d.DocNumberNorm, descending).ThenByDescending(d => d.IssueDate),
+            SearchSort.Type => By(pendingFirst, d => d.Type, descending).ThenByDescending(d => d.IssueDate),
+            SearchSort.Direction => By(pendingFirst, d => d.Direction, descending).ThenByDescending(d => d.IssueDate),
+            _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null),
+        };
+        return sorted.ThenByDescending(d => d.Id);
+    }
+
+    private static IOrderedQueryable<Document> By<TKey>(
+        IOrderedQueryable<Document> query, Expression<Func<Document, TKey>> key, bool descending) =>
+        descending ? query.ThenByDescending(key) : query.ThenBy(key);
 }

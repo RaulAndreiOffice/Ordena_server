@@ -1,6 +1,7 @@
 using System.Globalization;
 using Ordena.Backend.Dtos;
 using Ordena.Backend.Models;
+using Ordena.Backend.Repositories;
 using Ordena.Backend.Services;
 using Ordena.Tests.TestSupport;
 
@@ -153,6 +154,81 @@ public sealed class SearchServiceTests : IDisposable
             await Numbers(new SearchQuery { SortBy = SearchSort.Partner, Descending = false }));
     }
 
+    // Not paid (or collected) yet: first whatever the column and its direction, so it stays in sight.
+    [Theory]
+    [InlineData(SearchSort.IssueDate, true)]
+    [InlineData(SearchSort.IssueDate, false)]
+    [InlineData(SearchSort.Partner, false)]
+    [InlineData(SearchSort.Partner, true)]
+    [InlineData(SearchSort.DocNumber, false)]
+    [InlineData(SearchSort.DocNumber, true)]
+    [InlineData(SearchSort.Type, false)]
+    [InlineData(SearchSort.Direction, true)]
+    public async Task Pending_documents_come_first_whatever_the_sort(SearchSort sort, bool descending)
+    {
+        var alfa = Partner("Alfa");
+        var zeta = Partner("Zeta");
+        Doc(alfa, "A-1", "2026-01-10", paid: true);
+        Doc(zeta, "Z-9", "2025-06-01");
+        Doc(alfa, "A-2", "2026-05-01", paid: true);
+        Doc(alfa, "B-5", "2026-02-01", DocType.Recibo, Direction.Emitida);
+
+        var items = (await _search.SearchAsync(new SearchQuery { SortBy = sort, Descending = descending }, Ct)).Items;
+
+        Assert.Equal([false, false, true, true], items.Select(i => i.IsPaid));
+    }
+
+    // The default order (pending first, then the newest) is read straight off its index, so the first 500
+    // of thousands of documents come without sorting them all: the first search stays instant.
+    [Fact]
+    public async Task The_default_order_needs_no_sorting()
+    {
+        var telefonica = Partner("Telefónica");
+        Doc(telefonica, "A-1", "2026-01-10");
+        Doc(telefonica, "A-2", "2026-03-14", paid: true);
+        var plans = new QueryPlanRecorder(_db);
+
+        await new SearchService(new UnitOfWorkFactory(plans)).SearchAsync(new SearchQuery(), Ct);
+
+        var search = Assert.Single(plans.Queries, q => q.Sql.Contains("ORDER BY", StringComparison.Ordinal));
+        Assert.Contains("USING INDEX IX_Documents_IsPaid_IssueDate_Id", search.Plan);
+        Assert.DoesNotContain("TEMP B-TREE", search.Plan);
+    }
+
+    // Among the pending ones, and among the rest, the chosen column orders as usual.
+    [Fact]
+    public async Task Within_pending_and_paid_the_chosen_sort_applies()
+    {
+        var alfa = Partner("Alfa");
+        var zeta = Partner("Zeta");
+        Doc(alfa, "A-1", "2026-01-10", paid: true);
+        Doc(zeta, "Z-9", "2025-06-01");
+        Doc(zeta, "Z-2", "2026-05-01", paid: true);
+        Doc(alfa, "A-5", "2026-02-01");
+
+        Assert.Equal(["A-5", "Z-9", "A-1", "Z-2"], await Numbers(new SearchQuery { SortBy = SearchSort.Partner, Descending = false }));
+        Assert.Equal(["A-5", "Z-9", "Z-2", "A-1"], await Numbers(new SearchQuery()));
+    }
+
+    // «Ver solo pendientes»; and the reminder counts every pending document, whatever is searched, but not
+    // those in the trash.
+    [Fact]
+    public async Task Pending_only_shows_just_those_and_the_pending_total_ignores_the_search()
+    {
+        var telefonica = Partner("Telefónica");
+        Doc(telefonica, "A-1", "2026-01-10");
+        Doc(telefonica, "A-2", "2025-03-14");
+        Doc(telefonica, "A-3", "2026-05-01", paid: true);
+        Doc(telefonica, "A-4", "2026-05-02", deleted: true);
+
+        var pending = await _search.SearchAsync(new SearchQuery { PendingOnly = true }, Ct);
+        var year2026 = await _search.SearchAsync(new SearchQuery { Year = 2026 }, Ct);
+
+        Assert.Equal(["A-1", "A-2"], pending.Items.Select(i => i.DocNumber));
+        Assert.Equal((2, 2), (pending.PendingTotal, year2026.PendingTotal));
+        Assert.Equal(["A-1", "A-3"], year2026.Items.Select(i => i.DocNumber));
+    }
+
     [Fact]
     public async Task Returns_the_grid_columns()
     {
@@ -163,7 +239,7 @@ public sealed class SearchServiceTests : IDisposable
 
         Assert.Equal(
             new DocumentListItem(document.Id, new DateOnly(2026, 3, 14), "Telefónica España, S.A.U.",
-                "A-2026/0123", DocType.FacturaRectificativa, Direction.Emitida, document.RelativePath),
+                "A-2026/0123", DocType.FacturaRectificativa, Direction.Emitida, document.RelativePath, IsPaid: false),
             item);
     }
 
@@ -197,13 +273,14 @@ public sealed class SearchServiceTests : IDisposable
 
     private Document Doc(
         int partnerId, string number, string date,
-        DocType type = DocType.Factura, Direction direction = Direction.Recibida, bool deleted = false)
+        DocType type = DocType.Factura, Direction direction = Direction.Recibida, bool deleted = false, bool paid = false)
     {
         var document = TestData.NewDocument(
             partnerId, docNumber: number, issueDate: DateOnly.Parse(date, CultureInfo.InvariantCulture));
         document.Type = type;
         document.Direction = direction;
         document.DeletedAt = deleted ? TestData.Now : null;
+        document.IsPaid = paid;
         return _db.Save(document);
     }
 

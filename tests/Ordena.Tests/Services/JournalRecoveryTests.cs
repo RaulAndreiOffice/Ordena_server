@@ -217,5 +217,6 @@ public sealed class JournalRecoveryTests : IDisposable
         IssueDate = DateOnly.Parse(date, CultureInfo.InvariantCulture),
         Type = DocType.Factura,
         Direction = Direction.Recibida,
+        IsPaid = false,
     };
 }

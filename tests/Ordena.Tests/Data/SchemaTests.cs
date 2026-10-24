@@ -11,7 +11,7 @@ public sealed class SchemaTests : IDisposable
         ["Documents"] =
         [
             "Id", "Sha256", "PartnerId", "DocNumber", "DocNumberNorm", "IssueDate", "Type", "Direction",
-            "RelativePath", "OriginalName", "FileSizeBytes", "ImportedAt", "UpdatedAt", "DeletedAt",
+            "RelativePath", "OriginalName", "FileSizeBytes", "ImportedAt", "UpdatedAt", "DeletedAt", "IsPaid",
         ],
         ["FileOperations"] = ["Id", "DocumentId", "FromPath", "ToPath", "State", "Error", "CreatedAt"],
         ["Settings"] = ["Key", "Value"],
@@ -42,7 +42,7 @@ public sealed class SchemaTests : IDisposable
 
     [Theory]
     [InlineData("Partners", new[] { "FolderName (unique)", "NameNorm" })]
-    [InlineData("Documents", new[] { "DocNumberNorm", "IssueDate", "PartnerId+DocNumberNorm", "RelativePath (unique)", "Sha256 (unique)" })]
+    [InlineData("Documents", new[] { "DocNumberNorm", "IsPaid+IssueDate+Id", "IssueDate", "PartnerId+DocNumberNorm", "RelativePath (unique)", "Sha256 (unique)" })]
     [InlineData("FileOperations", new[] { "DocumentId" })]
     [InlineData("Settings", new string[0])]
     public void Indexes_match_the_board(string table, string[] expected)

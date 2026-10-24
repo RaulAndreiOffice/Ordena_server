@@ -38,6 +38,9 @@ internal interface IDocumentRepository
     Task<IReadOnlyList<DocumentListItem>> SearchAsync(DocumentSearch search, int limit, CancellationToken ct);
     Task<int> CountAsync(DocumentSearch search, CancellationToken ct);
 
+    // Not deleted and not paid yet, whatever the search: Buscar's reminder above the grid.
+    Task<int> CountPendingAsync(CancellationToken ct);
+
     void Add(Document document);
 
     // Only to undo an import whose file couldn't be written. Deleting a document is a soft delete.

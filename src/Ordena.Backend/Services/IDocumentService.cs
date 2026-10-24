@@ -18,6 +18,10 @@ public interface IDocumentService
     // A blank partner or number throws ArgumentException; a deleted document InvalidOperationException.
     Task<Result<DocumentListItem>> EditAsync(EditDocumentRequest request, CancellationToken ct);
 
+    // «Marcar como pagada / cobrada / pendiente». Only the row changes: the status isn't in the file name.
+    // A deleted document throws InvalidOperationException.
+    Task<Result> SetPaidAsync(int id, bool isPaid, CancellationToken ct);
+
     // Soft delete: the file moves to _Papelera and the document leaves search.
     // An already deleted document throws InvalidOperationException.
     Task<Result> DeleteAsync(int id, CancellationToken ct);

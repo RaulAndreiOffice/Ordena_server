@@ -23,6 +23,7 @@ public static class FrontendServiceCollectionExtensions
         services.AddSingleton<IPreviewService, PreviewService>();
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IAppLifetime, AppLifetime>();
+        services.AddSingleton<IArchiveState, ArchiveState>();
 
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainViewModel>();
@@ -31,6 +32,7 @@ public static class FrontendServiceCollectionExtensions
         services.AddSingleton<BulkImportViewModel>();
         services.AddTransient<TrashViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<ArchiveSettingsViewModel>();
         services.AddTransient<DocumentFormViewModel>();
 
         services.AddTransient<FirstRunWindow>();

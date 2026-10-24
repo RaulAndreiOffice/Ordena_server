@@ -49,6 +49,162 @@
   <data name="Settings_RestartNow" xml:space="preserve">
     <value>Reiniciar ahora</value>
   </data>
+  <data name="Settings_FolderTitle" xml:space="preserve">
+    <value>Carpeta de facturas</value>
+  </data>
+  <data name="Settings_FolderAvailable" xml:space="preserve">
+    <value>Disponible</value>
+  </data>
+  <data name="Settings_FolderUnavailable" xml:space="preserve">
+    <value>No disponible</value>
+  </data>
+  <data name="Settings_FolderHint" xml:space="preserve">
+    <value>Si has movido la carpeta tú mismo, usa Cambiar ubicación. Para llevarla a otro disco, usa Mover carpeta: Ordena copia y comprueba cada archivo.</value>
+  </data>
+  <data name="Settings_ChangeLocation" xml:space="preserve">
+    <value>Cambiar ubicación…</value>
+  </data>
+  <data name="Settings_Move" xml:space="preserve">
+    <value>Mover carpeta…</value>
+  </data>
+  <data name="Settings_LocationChanged" xml:space="preserve">
+    <value>Ordena usa ahora la carpeta:
+{0}</value>
+  </data>
+  <data name="Settings_MovePickTitle" xml:space="preserve">
+    <value>Elige dónde mover la carpeta de facturas</value>
+  </data>
+  <data name="Settings_MoveConfirm" xml:space="preserve">
+    <value>La carpeta de facturas se copiará a:
+{0}
+
+Ordena comprueba cada archivo y sigue usando la carpeta actual hasta que todo esté copiado. ¿Continuar?</value>
+  </data>
+  <data name="Settings_MoveProgress" xml:space="preserve">
+    <value>Moviendo la carpeta de facturas…</value>
+  </data>
+  <data name="Settings_MoveCancelled" xml:space="preserve">
+    <value>Traslado cancelado. No ha cambiado nada.</value>
+  </data>
+  <data name="Settings_MoveTargetNotEmpty" xml:space="preserve">
+    <value>Ya hay archivos en {0}. Elige otra carpeta.</value>
+  </data>
+  <data name="Settings_MoveDone" xml:space="preserve">
+    <value>La carpeta de facturas está ahora en:
+{0}
+
+¿Borrar la carpeta antigua?
+{1}
+
+Solo se borran los archivos que tienen una copia idéntica en la nueva.</value>
+  </data>
+  <data name="Settings_OldCopyDeleted" xml:space="preserve">
+    <value>Carpeta antigua borrada.</value>
+  </data>
+  <data name="Settings_OldCopyKept" xml:space="preserve">
+    <value>Carpeta antigua borrada, salvo {0:N0} archivos que no tenían copia en la nueva. Siguen en:
+{1}</value>
+  </data>
+  <data name="Settings_WaitForBulkImport" xml:space="preserve">
+    <value>Se está importando una carpeta. Espera a que termine.</value>
+  </data>
+  <data name="Settings_BackupTitle" xml:space="preserve">
+    <value>Copias de seguridad</value>
+  </data>
+  <data name="Settings_LastBackup" xml:space="preserve">
+    <value>Última copia: {0:d}, {0:t}</value>
+  </data>
+  <data name="Settings_NoBackupYet" xml:space="preserve">
+    <value>Todavía no hay ninguna copia.</value>
+  </data>
+  <data name="Settings_BackupHint" xml:space="preserve">
+    <value>Se guardan dentro de la carpeta de facturas, en _backup, cada vez que cierras Ordena después de cambios. Se conservan las 10 últimas: con ellas se recupera todo en un PC nuevo.</value>
+  </data>
+  <data name="Settings_BackupNow" xml:space="preserve">
+    <value>Hacer copia ahora</value>
+  </data>
+  <data name="Settings_CheckTitle" xml:space="preserve">
+    <value>Comprobar carpeta</value>
+  </data>
+  <data name="Settings_CheckHint" xml:space="preserve">
+    <value>Devuelve a su sitio los archivos movidos o renombrados a mano en el Explorador, y encuentra los PDF copiados a la carpeta sin pasar por Ordena.</value>
+  </data>
+  <data name="Settings_Check" xml:space="preserve">
+    <value>Comprobar carpeta</value>
+  </data>
+  <data name="Settings_CheckProgress" xml:space="preserve">
+    <value>Comprobando la carpeta de facturas…</value>
+  </data>
+  <data name="Settings_CheckAllGood" xml:space="preserve">
+    <value>Todo en orden: {0:N0} documentos, cada uno con su archivo.</value>
+  </data>
+  <data name="Settings_CheckSummary" xml:space="preserve">
+    <value>Comprobados {0:N0} documentos.</value>
+  </data>
+  <data name="Settings_CheckRelinked" xml:space="preserve">
+    <value>Devueltos a su sitio (se habían movido o renombrado a mano): {0:N0}</value>
+  </data>
+  <data name="Settings_CheckMissing" xml:space="preserve">
+    <value>Documentos sin archivo: {0:N0}</value>
+  </data>
+  <data name="Settings_CheckMissingHint" xml:space="preserve">
+    <value>Su archivo no está en ninguna parte de la carpeta. Si sabes dónde está, búscalo y Ordena lo vuelve a enlazar.</value>
+  </data>
+  <data name="Settings_MissingItem" xml:space="preserve">
+    <value>{0} · {1} · {2:d}</value>
+  </data>
+  <data name="Settings_LocateFile" xml:space="preserve">
+    <value>Buscar archivo</value>
+  </data>
+  <data name="Settings_CheckUnknown" xml:space="preserve">
+    <value>PDF que no están en Ordena: {0:N0}</value>
+  </data>
+  <data name="Settings_CheckUnknownHint" xml:space="preserve">
+    <value>Los que ya tienen el nombre que pone Ordena se añaden tal cual, sin moverlos; los demás van a la importación manual.</value>
+  </data>
+  <data name="Settings_Register" xml:space="preserve">
+    <value>Añadir a Ordena</value>
+  </data>
+  <data name="Settings_Registered" xml:space="preserve">
+    <value>Añadidos a Ordena: {0:N0}.
+Para la importación manual: {1:N0}.</value>
+  </data>
+  <data name="Archive_Unavailable" xml:space="preserve">
+    <value>La carpeta de facturas no está disponible: {0}</value>
+  </data>
+  <data name="Archive_UnavailableHint" xml:space="preserve">
+    <value>Puedes buscar documentos, pero no abrirlos ni importar hasta que vuelva. Si la has movido, usa Buscar…</value>
+  </data>
+  <data name="Archive_PanelHint" xml:space="preserve">
+    <value>Para importar hace falta la carpeta de facturas. Conecta el disco o la unidad de red donde está y pulsa Reintentar; si la has movido, pulsa Buscar…</value>
+  </data>
+  <data name="Archive_StillUnavailable" xml:space="preserve">
+    <value>La carpeta de facturas sigue sin estar disponible:
+{0}
+
+Conecta el disco o la unidad de red donde está.</value>
+  </data>
+  <data name="Archive_Retry" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
+  <data name="Archive_Locate" xml:space="preserve">
+    <value>Buscar…</value>
+  </data>
+  <data name="Archive_Continue" xml:space="preserve">
+    <value>Continuar</value>
+  </data>
+  <data name="Archive_LocateTitle" xml:space="preserve">
+    <value>Elige la carpeta donde está ahora tu archivo de facturas</value>
+  </data>
+  <data name="Progress_Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="Progress_Cancelling" xml:space="preserve">
+    <value>Cancelando…</value>
+  </data>
+  <data name="Progress_Files" xml:space="preserve">
+    <value>Archivo {0:N0} de {1:N0} · {2} de {3}</value>
+  </data>
   <data name="Search_ImportButton" xml:space="preserve">
     <value>Importar facturas</value>
   </data>
@@ -86,6 +242,48 @@ Podrás restaurarlo desde la Papelera.</value>
   </data>
   <data name="Search_PickFileTitle" xml:space="preserve">
     <value>Busca el archivo de este documento</value>
+  </data>
+  <data name="Search_PendingOne" xml:space="preserve">
+    <value>1 pendiente de pago o cobro</value>
+  </data>
+  <data name="Search_PendingMany" xml:space="preserve">
+    <value>{0:N0} pendientes de pago o cobro</value>
+  </data>
+  <data name="Search_ShowPending" xml:space="preserve">
+    <value>Ver solo pendientes</value>
+  </data>
+  <data name="Search_ShowAll" xml:space="preserve">
+    <value>Ver todos</value>
+  </data>
+  <data name="Search_PendingTagHint" xml:space="preserve">
+    <value>Haz clic para marcarla como pagada o cobrada</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Payment_Paid" xml:space="preserve">
+    <value>Pagada</value>
+  </data>
+  <data name="Payment_Collected" xml:space="preserve">
+    <value>Cobrada</value>
+  </data>
+  <data name="Payment_Pending" xml:space="preserve">
+    <value>Pendiente</value>
+  </data>
+  <data name="Action_MarkPaid" xml:space="preserve">
+    <value>Marcar como pagada</value>
+  </data>
+  <data name="Action_MarkCollected" xml:space="preserve">
+    <value>Marcar como cobrada</value>
+  </data>
+  <data name="Action_MarkPending" xml:space="preserve">
+    <value>Marcar como pendiente</value>
+  </data>
+  <data name="Bulk_MarkPaid" xml:space="preserve">
+    <value>Marcar todas como pagadas o cobradas</value>
+  </data>
+  <data name="Bulk_MarkPaidHint" xml:space="preserve">
+    <value>Lo ya archivado suele estar pagado. Si lo desmarcas, cada documento saldrá primero en Buscar, como pendiente.</value>
   </data>
   <data name="Filter_Year" xml:space="preserve">
     <value>Año</value>
@@ -240,11 +438,56 @@ Podrás restaurarlo desde la Papelera.</value>
 
 Elige otra con «Cambiar…».</value>
   </data>
+  <data name="FirstRun_HowToStart" xml:space="preserve">
+    <value>¿Cómo quieres empezar?</value>
+  </data>
+  <data name="FirstRun_NewArchive" xml:space="preserve">
+    <value>Empezar de cero</value>
+  </data>
+  <data name="FirstRun_NewArchiveHint" xml:space="preserve">
+    <value>Ordena crea la carpeta de facturas y la va llenando con lo que importes.</value>
+  </data>
+  <data name="FirstRun_ExistingArchive" xml:space="preserve">
+    <value>Ya tengo un archivo de facturas</value>
+  </data>
+  <data name="FirstRun_ExistingArchiveHint" xml:space="preserve">
+    <value>La carpeta de facturas de otro PC, o de antes de reinstalar Windows: Ordena recupera su índice.</value>
+  </data>
+  <data name="FirstRun_ExistingFolderHint" xml:space="preserve">
+    <value>La carpeta que contiene los años (2025, 2026…) y _backup.</value>
+  </data>
+  <data name="FirstRun_PickExistingTitle" xml:space="preserve">
+    <value>Elige tu carpeta de facturas</value>
+  </data>
+  <data name="FirstRun_FolderMissing" xml:space="preserve">
+    <value>Esa carpeta no existe:
+{0}</value>
+  </data>
+  <data name="FirstRun_Restored" xml:space="preserve">
+    <value>Recuperada la copia de seguridad del {0:d} a las {0:t}: {1:N0} documentos.</value>
+  </data>
+  <data name="FirstRun_AskRebuild" xml:space="preserve">
+    <value>No hay ninguna copia de seguridad en esa carpeta:
+{0}
+
+¿Reconstruir el índice a partir de las carpetas y los nombres de los archivos? Ordena lee cada PDF una vez.</value>
+  </data>
+  <data name="FirstRun_RebuildProgress" xml:space="preserve">
+    <value>Reconstruyendo el índice…</value>
+  </data>
+  <data name="FirstRun_Rebuilt" xml:space="preserve">
+    <value>Índice reconstruido: {0:N0} documentos de {1:N0} proveedores y clientes.</value>
+  </data>
+  <data name="FirstRun_RebuiltLeftOut" xml:space="preserve">
+    <value>{0:N0} PDF no tienen el nombre que pone Ordena: los verás en Ajustes → Comprobar carpeta.</value>
+  </data>
   <data name="Startup_ArchiveUnavailable" xml:space="preserve">
     <value>La carpeta de facturas no está disponible:
 {0}
 
-Conecta el disco y elige «Sí» para reintentar. Con «No» puedes seguir buscando, pero no abrir ni importar archivos hasta que vuelva.</value>
+Si está en un disco externo o en una unidad de red, conéctalo y pulsa Reintentar. Si la has movido, pulsa Buscar… y elige dónde está ahora.
+
+Con Continuar puedes buscar documentos, pero no abrirlos ni importar hasta que vuelva.</value>
   </data>
   <data name="Dialog_Title" xml:space="preserve">
     <value>Ordena</value>
@@ -653,6 +896,9 @@ Conecta el disco y elige «Sí» para reintentar. Con «No» puedes seguir busca
   </data>
   <data name="Bulk_ReportTitle" xml:space="preserve">
     <value>Importación terminada</value>
+  </data>
+  <data name="Bulk_ReportTitleCancelled" xml:space="preserve">
+    <value>Importación cancelada</value>
   </data>
   <data name="Bulk_Report" xml:space="preserve">
     <value>Importados {0:N0} · Duplicados {1:N0} · Nº ya usado {2:N0} · Fallidos {3:N0} · {4}</value>

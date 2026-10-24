@@ -57,6 +57,9 @@ namespace Ordena.Backend.Data.Migrations
                     b.Property<DateTime>("ImportedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateOnly>("IssueDate")
                         .HasColumnType("TEXT");
 
@@ -96,6 +99,9 @@ namespace Ordena.Backend.Data.Migrations
                         .IsUnique();
 
                     b.HasIndex("PartnerId", "DocNumberNorm");
+
+                    b.HasIndex("IsPaid", "IssueDate", "Id")
+                        .IsDescending(false, true, true);
 
                     b.ToTable("Documents", (string)null);
                 });

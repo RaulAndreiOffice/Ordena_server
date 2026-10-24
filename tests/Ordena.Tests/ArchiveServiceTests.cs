@@ -246,6 +246,7 @@ public sealed class ArchiveServiceTests : IDisposable
 
         Assert.True(result.IsSuccess);
         Assert.Equal(7, result.Value.DocumentCount); // the one in the trash isn't in search
+        Assert.Equal(_clock.UtcNow.ToLocalTime(), result.Value.BackupTime); // 08:30 to the minute, as in the name
         Assert.Equal(before, FullSnapshot());
         Assert.Equal(newDisk, await ArchiveRootSettingAsync(newPc));
         Assert.True((await newPc.GetRequiredService<IDocumentService>().GetFullPathAsync(ids[0], Ct)).IsSuccess);
@@ -314,6 +315,7 @@ public sealed class ArchiveServiceTests : IDisposable
 
         Assert.True(result.IsSuccess);
         Assert.Equal(before, KeySnapshot());
+        Assert.Equal(["0"], Snapshot("SELECT COUNT(*) FROM Documents WHERE IsPaid = 0")); // names can't say; old ones are settled
         Assert.Equal((8, 7), (result.Value.DocumentCount, result.Value.PartnerCount));
         Assert.Equal([_archive.Path("2026", "escaneo suelto.pdf")], result.Value.Unrecognized);
         Assert.Equal([duplicate], result.Value.Duplicates);
@@ -400,7 +402,7 @@ public sealed class ArchiveServiceTests : IDisposable
     // Every column of every document and its partner.
     private string[] FullSnapshot() => Snapshot("""
         SELECT d.Id, d.Sha256, d.PartnerId, d.DocNumber, d.DocNumberNorm, d.IssueDate, d.Type, d.Direction,
-               d.RelativePath, d.OriginalName, d.FileSizeBytes, d.ImportedAt, d.UpdatedAt, d.DeletedAt,
+               d.RelativePath, d.OriginalName, d.FileSizeBytes, d.ImportedAt, d.UpdatedAt, d.DeletedAt, d.IsPaid,
                p.Name, p.NameNorm, p.FolderName, p.CreatedAt
         FROM Documents d JOIN Partners p ON p.Id = d.PartnerId ORDER BY d.Id
         """);

@@ -32,6 +32,17 @@ internal sealed class DocumentService(
         return Task.Run(() => EditCoreAsync(request, ct), ct);
     }
 
+    // Only the row changes, so it works while the archive folder is missing too.
+    public Task<Result> SetPaidAsync(int id, bool isPaid, CancellationToken ct) => Task.Run(async () =>
+    {
+        await using var uow = uowFactory.Create();
+        var document = RequireActive(await LoadAsync(uow, id, ct).ConfigureAwait(false));
+        document.IsPaid = isPaid;
+        document.UpdatedAt = clock.UtcNow;
+        await uow.SaveChangesAsync(ct).ConfigureAwait(false);
+        return Result.Ok();
+    }, ct);
+
     public Task<Result> DeleteAsync(int id, CancellationToken ct) => Task.Run(async () =>
     {
         await using var uow = uowFactory.Create();
@@ -145,6 +156,7 @@ internal sealed class DocumentService(
             d.IssueDate = request.IssueDate;
             d.Type = request.Type;
             d.Direction = request.Direction;
+            d.IsPaid = request.IsPaid;
             d.UpdatedAt = now;
         }, ct).ConfigureAwait(false);
 

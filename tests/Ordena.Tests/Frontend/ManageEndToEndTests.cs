@@ -36,19 +36,8 @@ public sealed class ManageEndToEndTests : IDisposable
     [Fact]
     public async Task Edit_delete_and_restore_keep_the_files_and_the_rows_in_step()
     {
-        await using var provider = new ServiceCollection()
-            .AddBackend(_appData.Path("data"))
-            .AddFrontend()
-            // The last registration wins: a messenger of this test's own, and no windows.
-            .AddSingleton<IMessenger>(new WeakReferenceMessenger())
-            .AddSingleton<IPreviewService, FakePreview>()
-            .AddSingleton<IDialogService, FakeDialogs>()
-            .AddSingleton<IShellService, FakeShell>()
-            .AddSingleton<IFilePickerService, FakeFilePicker>()
-            .BuildServiceProvider();
-        await provider.GetRequiredService<IMaintenanceService>().RunStartupAsync(Ct);
+        await using var provider = await StartAsync();
         var archive = _appData.Path("Facturas");
-        Assert.True((await provider.GetRequiredService<ISettingsService>().SetArchiveRootAsync(archive, Ct)).IsSuccess);
 
         await ImportAsync(provider, "telefonica.pdf", "Telefónica España, S.A.U.", "A-1", new(2026, 3, 14), DocType.Factura);
         await ImportAsync(provider, "repsol.pdf", "Repsol S.A.", "T-2", new(2026, 4, 2), DocType.FacturaSimplificada);
@@ -101,8 +90,56 @@ public sealed class ManageEndToEndTests : IDisposable
         await AssertConsistentAsync(provider, archive);
     }
 
+    // Pending documents (not paid yet) stay on top whatever the sort; marking one paid from its row moves it
+    // down, and its file stays where it is.
+    [Fact]
+    public async Task Pending_documents_stay_on_top_and_one_marked_paid_moves_down()
+    {
+        await using var provider = await StartAsync();
+        var archive = _appData.Path("Facturas");
+        await ImportAsync(provider, "alfa.pdf", "Alfa S.L.", "A-1", new(2026, 3, 14), DocType.Factura, paid: true);
+        await ImportAsync(provider, "zeta.pdf", "Zeta S.L.", "Z-1", new(2026, 1, 2), DocType.Factura);
+        await ImportAsync(provider, "beta.pdf", "Beta S.L.", "B-1", new(2026, 2, 5), DocType.Recibo);
+
+        var search = provider.GetRequiredService<SearchViewModel>();
+        search.SearchDelay = TimeSpan.Zero;
+        await search.OnNavigatedToAsync();
+        await search.SortCommand.ExecuteAsync(nameof(SearchSort.Partner)); // A to Z
+
+        Assert.Equal(["B-1", "Z-1", "A-1"], search.Results.Select(r => r.DocNumber));
+        Assert.Equal("2 pendientes de pago o cobro", search.PendingText);
+
+        var beta = search.Results[0];
+        await search.TogglePaidCommand.ExecuteAsync(beta);
+        await search.PendingSearch;
+
+        Assert.Equal(["Z-1", "A-1", "B-1"], search.Results.Select(r => r.DocNumber));
+        Assert.Equal("1 pendiente de pago o cobro", search.PendingText);
+        Assert.Equal(beta.RelativePath, search.Results[2].RelativePath);
+        Assert.True(File.Exists(Path.Combine(archive, beta.RelativePath)));
+        await AssertConsistentAsync(provider, archive);
+    }
+
+    // The real backend on this test's folders, with what opens windows faked, and the archive folder set.
+    private async Task<ServiceProvider> StartAsync()
+    {
+        var provider = new ServiceCollection()
+            .AddBackend(_appData.Path("data"))
+            .AddFrontend()
+            // The last registration wins: a messenger of this test's own, and no windows.
+            .AddSingleton<IMessenger>(new WeakReferenceMessenger())
+            .AddSingleton<IPreviewService, FakePreview>()
+            .AddSingleton<IDialogService, FakeDialogs>()
+            .AddSingleton<IShellService, FakeShell>()
+            .AddSingleton<IFilePickerService, FakeFilePicker>()
+            .BuildServiceProvider();
+        await provider.GetRequiredService<IMaintenanceService>().RunStartupAsync(Ct);
+        Assert.True((await provider.GetRequiredService<ISettingsService>().SetArchiveRootAsync(_appData.Path("Facturas"), Ct)).IsSuccess);
+        return provider;
+    }
+
     private async Task ImportAsync(
-        IServiceProvider provider, string fileName, string partner, string number, DateOnly date, DocType type)
+        IServiceProvider provider, string fileName, string partner, string number, DateOnly date, DocType type, bool paid = false)
     {
         var source = _downloads.WriteFile(fileName, TestPdf.Bytes(fileName));
         var result = await provider.GetRequiredService<IImportService>().ImportAsync(new ImportRequest
@@ -113,6 +150,7 @@ public sealed class ManageEndToEndTests : IDisposable
             IssueDate = date,
             Type = type,
             Direction = Direction.Recibida,
+            IsPaid = paid,
         }, Ct);
         Assert.True(result.IsSuccess, $"{fileName}: {result.Error}");
     }

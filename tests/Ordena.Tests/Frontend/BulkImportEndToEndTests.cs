@@ -7,6 +7,7 @@ using Ordena.Backend;
 using Ordena.Backend.Data;
 using Ordena.Backend.Dtos;
 using Ordena.Backend.Models;
+using Ordena.Backend.Rules;
 using Ordena.Backend.Services;
 using Ordena.Frontend;
 using Ordena.Frontend.Messages;
@@ -145,6 +146,12 @@ public sealed class BulkImportEndToEndTests : IDisposable
         vm.NextCommand.Execute(null);
         Assert.Equal(BulkStep.Partners, vm.Step);
 
+        // The suggested merges, accepted as they come: a short and a long spelling of one supplier become one.
+        var map = vm.PartnerMap();
+        string Final(string name) => map.GetValueOrDefault(name, name);
+        Assert.Equal(Final("Iberdrola"), Final("Iberdrola Clientes"));
+        Assert.Equal(Final("SEUR"), Final("SEUR Transporte"));
+
         // Step 4 -> Step 5 (Run)
         await vm.ImportCommand.ExecuteAsync(null);
         await vm.PendingRun;
@@ -165,6 +172,9 @@ public sealed class BulkImportEndToEndTests : IDisposable
                 .ToListAsync(Ct);
 
             Assert.Equal(3000, dbDocs.Count);
+            Assert.Equal(
+                expectedDocs.Select(e => TextNormalizer.NormalizeName(Final(e.RawPartner))).Distinct().Count(),
+                dbDocs.Select(d => d.PartnerId).Distinct().Count());
 
             var dbDocMap = dbDocs.ToDictionary(d => d.DocNumber, d => d);
             foreach (var expected in expectedDocs)
@@ -172,8 +182,8 @@ public sealed class BulkImportEndToEndTests : IDisposable
                 Assert.True(dbDocMap.TryGetValue(expected.Number, out var actual), $"Document {expected.Number} missing in DB");
                 Assert.Equal(expected.Date, actual.IssueDate);
                 Assert.Equal(expected.Number, actual.DocNumber);
-                // Partner should match canonical or mapped partner
-                Assert.False(string.IsNullOrWhiteSpace(actual.Partner.Name));
+                // The name in the file, after the wizard's merges (names equal once normalized are one partner).
+                Assert.Equal(TextNormalizer.NormalizeName(Final(expected.RawPartner)), actual.Partner.NameNorm);
 
                 // Verify file exists in archive under its standard relative path
                 var archiveFullPath = Path.Combine(archive, actual.RelativePath.Replace('/', Path.DirectorySeparatorChar));

@@ -90,7 +90,7 @@ public sealed class ImportServiceTests : IDisposable
 
         Assert.Equal(
             new DocumentListItem(document.Id, document.IssueDate, Telefonica, "A-2026/0123",
-                DocType.Factura, Direction.Recibida, TelefonicaPath),
+                DocType.Factura, Direction.Recibida, TelefonicaPath, IsPaid: false), // pending, as nothing said otherwise
             result.Value.Document);
         Assert.Equal((long)FileOperationState.Done, _db.Scalar("SELECT State FROM FileOperations"));
     }
@@ -108,6 +108,17 @@ public sealed class ImportServiceTests : IDisposable
             "2026/3T/Emitidas/Cliente-Ejemplo/2026-07-03_Cliente-Ejemplo_T-88812_Ticket.pdf",
             result.Value.Document.RelativePath);
         Assert.Equal([result.Value.Document.RelativePath], _archive.Files());
+    }
+
+    [Fact]
+    public async Task A_document_already_paid_is_saved_as_paid()
+    {
+        var source = _downloads.WriteFile("pagada.pdf", TestPdf.Bytes("pagada"));
+
+        var result = await _import.ImportAsync(Request(source) with { IsPaid = true }, Ct);
+
+        Assert.True(result.Value.Document.IsPaid);
+        Assert.Equal(1L, _db.Scalar("SELECT IsPaid FROM Documents"));
     }
 
     [Fact]

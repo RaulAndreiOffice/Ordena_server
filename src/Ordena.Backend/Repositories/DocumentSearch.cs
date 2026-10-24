@@ -19,6 +19,9 @@ internal sealed record DocumentSearch
     public DocType? Type { get; init; }
     public Direction? Direction { get; init; }
 
+    // Only the documents not paid (or collected) yet.
+    public bool PendingOnly { get; init; }
+
     public SearchSort SortBy { get; init; } = SearchSort.IssueDate;
     public bool Descending { get; init; } = true;
 

@@ -105,6 +105,9 @@ for (var i = 0; i < count && !ct.IsCancellationRequested; i++)
         IssueDate = date,
         Type = type,
         Direction = direction,
+        // One in 50 still to pay or collect, so Buscar's pending ones show (from the index, which keeps the
+        // random data the same as before).
+        IsPaid = i % 50 != 0,
         ConfirmDuplicate = true,
     }, ct);
     if (!result.IsSuccess)

@@ -22,8 +22,9 @@ internal sealed class SearchService(IUnitOfWorkFactory uowFactory) : ISearchServ
             var total = items.Count < MaxResults
                 ? items.Count
                 : await uow.Documents.CountAsync(search, ct).ConfigureAwait(false);
+            var pending = await uow.Documents.CountPendingAsync(ct).ConfigureAwait(false);
 
-            return new SearchResult(items, total);
+            return new SearchResult(items, total, pending);
         }, ct);
     }
 
@@ -54,6 +55,7 @@ internal sealed class SearchService(IUnitOfWorkFactory uowFactory) : ISearchServ
             LastMonth = lastMonth,
             Type = query.Type,
             Direction = query.Direction,
+            PendingOnly = query.PendingOnly,
             SortBy = query.SortBy,
             Descending = query.Descending,
         };

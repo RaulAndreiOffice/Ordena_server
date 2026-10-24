@@ -192,6 +192,9 @@
 
                         <CheckBox Content="{x:Static res:Strings.Bulk_PartnerFromFolder}" IsChecked="{Binding PartnerFromFolder}" Margin="0,20,0,0" />
                         <TextBlock Text="{x:Static res:Strings.Bulk_PartnerFromFolderHint}" Style="{StaticResource Text.Small}" Margin="28,2,0,0" />
+
+                        <CheckBox Content="{x:Static res:Strings.Bulk_MarkPaid}" IsChecked="{Binding MarkPaid}" Margin="0,16,0,0" />
+                        <TextBlock Text="{x:Static res:Strings.Bulk_MarkPaidHint}" Style="{StaticResource Text.Small}" Margin="28,2,0,0" />
                     </StackPanel>
                 </DockPanel>
 
@@ -279,7 +282,8 @@
                                   ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding SelectedStatusFilter}" DisplayMemberPath="Label"
                                   AutomationProperties.Name="{x:Static res:Strings.Bulk_Column_Status}" />
                         <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Bulk_UseFileDates}"
-                                Command="{Binding IncludeFileDatesCommand}" Margin="0,0,12,0" />
+                                Command="{Binding IncludeFileDatesCommand}" Margin="0,0,12,0"
+                                Visibility="{Binding HasCheckDateRows, Converter={StaticResource BoolToVisibility}}" />
                         <StackPanel>
                             <TextBlock Text="{x:Static res:Strings.Bulk_PreviewTitle}" Style="{StaticResource Text.Heading}" />
                             <TextBlock Text="{x:Static res:Strings.Bulk_PreviewHint}" Style="{StaticResource Text.Small}" TextWrapping="Wrap" Margin="0,4,0,0" />
@@ -289,7 +293,7 @@
                         <DataGrid Style="{StaticResource DataGrid.List}" IsReadOnly="False" ItemsSource="{Binding FilteredRows}"
                                   AutomationProperties.Name="{x:Static res:Strings.Bulk_PreviewTitle}">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="{x:Static res:Strings.Bulk_Column_Include}" Width="90" IsReadOnly="True">
+                                <DataGridTemplateColumn Header="{x:Static res:Strings.Bulk_Column_Include}" Width="80" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="{x:Type vm:BulkRowViewModel}">
                                             <CheckBox IsChecked="{Binding Include, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanInclude}"
@@ -297,14 +301,14 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="{x:Static res:Strings.Bulk_Column_Status}" Width="150" IsReadOnly="True"
+                                <DataGridTemplateColumn Header="{x:Static res:Strings.Bulk_Column_Status}" Width="130" IsReadOnly="True"
                                                         CellTemplate="{StaticResource StatusTag}" />
-                                <DataGridTextColumn Header="{x:Static res:Strings.Bulk_Column_File}" Width="2*" IsReadOnly="True"
+                                <DataGridTextColumn Header="{x:Static res:Strings.Bulk_Column_File}" Width="*" MinWidth="120" IsReadOnly="True"
                                                     Binding="{Binding RelativePath}" />
-                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" Width="120" Binding="{Binding DateText}" />
-                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" Width="2*" Binding="{Binding Partner}" />
-                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Number}" Width="*" Binding="{Binding Number}" />
-                                <DataGridTemplateColumn Header="{x:Static res:Strings.Column_Type}" Width="200" IsReadOnly="True">
+                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" Width="110" Binding="{Binding DateText}" />
+                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" Width="*" MinWidth="120" Binding="{Binding Partner}" />
+                                <DataGridTextColumn Header="{x:Static res:Strings.Column_Number}" Width="150" Binding="{Binding Number}" />
+                                <DataGridTemplateColumn Header="{x:Static res:Strings.Column_Type}" Width="170" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="{x:Type vm:BulkRowViewModel}">
                                             <ComboBox ItemsSource="{Binding DataContext.Types, RelativeSource={RelativeSource AncestorType=DataGrid}}"
@@ -418,7 +422,7 @@
                             Visibility="{Binding Step, Converter={StaticResource EqualsToVisibility}, ConverterParameter=Report}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <controls:Icon Data="{StaticResource Icon.Linear.TickCircle}" Size="24" Foreground="{StaticResource Brush.Success}" Margin="0,0,10,0" />
-                        <TextBlock Text="{x:Static res:Strings.Bulk_ReportTitle}" Style="{StaticResource Text.Heading}" />
+                        <TextBlock Text="{Binding ReportTitle}" Style="{StaticResource Text.Heading}" />
                     </StackPanel>
                     <TextBlock Text="{Binding ReportText}" Style="{StaticResource Text.BodyMedium}" HorizontalAlignment="Center" TextWrapping="Wrap"
                                TextAlignment="Center" Margin="0,12,0,0" />

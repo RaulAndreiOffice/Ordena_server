@@ -36,6 +36,26 @@
                           Height="38" FontSize="14"
                           Background="{StaticResource Brush.Light}" BorderBrush="{StaticResource Brush.Border}" />
 
+                <!-- A new archive, or one that already exists (a new PC, Windows reinstalled). -->
+                <TextBlock Text="{x:Static res:Strings.FirstRun_HowToStart}" Style="{StaticResource Text.Label}"
+                           Margin="0,16,0,8" />
+                <RadioButton GroupName="Start" IsChecked="{Binding IsNewArchive}" Margin="0,0,0,10"
+                             AutomationProperties.Name="{x:Static res:Strings.FirstRun_NewArchive}">
+                    <StackPanel Margin="4,0,0,0">
+                        <TextBlock Text="{x:Static res:Strings.FirstRun_NewArchive}" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static res:Strings.FirstRun_NewArchiveHint}" Style="{StaticResource Text.Small}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton GroupName="Start" IsChecked="{Binding HasArchive}"
+                             AutomationProperties.Name="{x:Static res:Strings.FirstRun_ExistingArchive}">
+                    <StackPanel Margin="4,0,0,0">
+                        <TextBlock Text="{x:Static res:Strings.FirstRun_ExistingArchive}" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static res:Strings.FirstRun_ExistingArchiveHint}" Style="{StaticResource Text.Small}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </RadioButton>
+
                 <TextBlock Text="{x:Static res:Strings.FirstRun_Folder}" Style="{StaticResource Text.Label}"
                            Margin="0,16,0,6" />
                 <Grid>
@@ -54,7 +74,7 @@
                     <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Margin="8,0,0,0"
                             Content="{x:Static res:Strings.FirstRun_ChangeFolder}" Command="{Binding ChooseFolderCommand}" />
                 </Grid>
-                <TextBlock Text="{x:Static res:Strings.FirstRun_FolderHint}" Style="{StaticResource Text.Small}"
+                <TextBlock Text="{Binding FolderHint}" Style="{StaticResource Text.Small}"
                            TextWrapping="Wrap" Margin="0,6,0,0" />
 
                 <Button Style="{StaticResource Button.Primary}" Margin="0,28,0,0" IsDefault="True"

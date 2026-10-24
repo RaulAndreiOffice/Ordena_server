@@ -3,6 +3,7 @@ using Ordena.Backend.Models;
 namespace Ordena.Backend.Dtos;
 
 // One row of the search grid: only the columns it shows, never the full entity.
+// IsPaid false is pending (to pay or to collect): Buscar lists those first.
 public sealed record DocumentListItem(
     int Id,
     DateOnly IssueDate,
@@ -10,4 +11,5 @@ public sealed record DocumentListItem(
     string DocNumber,
     DocType Type,
     Direction Direction,
-    string RelativePath);
+    string RelativePath,
+    bool IsPaid = true);

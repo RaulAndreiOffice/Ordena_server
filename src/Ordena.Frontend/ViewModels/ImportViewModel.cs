@@ -85,6 +85,8 @@ public sealed partial class ImportViewModel : PageViewModel, IRecipient<FilesDro
 
     public override string Title => _localizer.Get("Page_Import");
 
+    public override bool NeedsArchive => true;
+
     public DocumentFormViewModel Form { get; }
 
     public ObservableCollection<ImportQueueItem> Queue { get; } = [];
@@ -105,16 +107,17 @@ public sealed partial class ImportViewModel : PageViewModel, IRecipient<FilesDro
     internal Task PendingEnqueue { get; private set; } = Task.CompletedTask;
 
     // async void like a command's handler, so an unexpected error reaches App's handler instead of vanishing.
-    public async void Receive(FilesDroppedMessage message) => await (PendingEnqueue = EnqueueAsync(message.Paths, message.KeepSource));
+    public async void Receive(FilesDroppedMessage message) =>
+        await (PendingEnqueue = EnqueueAsync(message.Paths, message.KeepSource, message.StartsPaid));
 
     // Adds PDFs not queued yet; the first one becomes current when nothing is.
-    public async Task EnqueueAsync(IEnumerable<string> paths, bool keepSource = false)
+    public async Task EnqueueAsync(IEnumerable<string> paths, bool keepSource = false, bool startsPaid = false)
     {
         foreach (var path in paths)
         {
             var isPdf = string.Equals(System.IO.Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase);
             if (isPdf && !Queue.Any(i => string.Equals(i.Path, path, StringComparison.OrdinalIgnoreCase)))
-                Queue.Add(new ImportQueueItem(path, keepSource));
+                Queue.Add(new ImportQueueItem(path, keepSource, startsPaid));
         }
 
         if (CurrentItem is null)
@@ -236,6 +239,7 @@ public sealed partial class ImportViewModel : PageViewModel, IRecipient<FilesDro
             return;
 
         item.IsCurrent = true;
+        Form.IsPaid = item.StartsPaid;
         PreviewPath = await _preview.CreateCopyAsync(item.Path);
         await CheckCurrentAsync();
     }

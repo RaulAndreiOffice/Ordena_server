@@ -127,7 +127,7 @@ internal sealed class ArchiveService(
 
             logger.LogInformation("Restored the database from {File}: {Count} documents", file, count);
             await recovery.RecoverAsync(archiveRoot, ct).ConfigureAwait(false);
-            return Result.Ok(new RestoreReport(file, count));
+            return Result.Ok(new RestoreReport(file, SqliteBackup.TimeOf(file), count));
         }, ct);
     }
 

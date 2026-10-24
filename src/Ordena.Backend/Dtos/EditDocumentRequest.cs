@@ -15,6 +15,9 @@ public sealed record EditDocumentRequest
     public required DocType Type { get; init; }
     public required Direction Direction { get; init; }
 
+    // Paid (received) or collected (issued). It isn't in the file name, so it never moves the file.
+    public required bool IsPaid { get; init; }
+
     // Set after the user confirmed the DuplicateNumber warning: request with { ConfirmDuplicate = true }.
     public bool ConfirmDuplicate { get; init; }
 }

@@ -76,6 +76,33 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mark as collected.
+        /// </summary>
+        public static string Action_MarkCollected {
+            get {
+                return ResourceManager.GetString("Action_MarkCollected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mark as paid.
+        /// </summary>
+        public static string Action_MarkPaid {
+            get {
+                return ResourceManager.GetString("Action_MarkPaid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mark as pending.
+        /// </summary>
+        public static string Action_MarkPending {
+            get {
+                return ResourceManager.GetString("Action_MarkPending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to More actions.
         /// </summary>
         public static string Action_More {
@@ -117,6 +144,81 @@ namespace Ordena.Frontend.Resources {
         public static string App_Title {
             get {
                 return ResourceManager.GetString("App_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Continue.
+        /// </summary>
+        public static string Archive_Continue {
+            get {
+                return ResourceManager.GetString("Archive_Continue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Find….
+        /// </summary>
+        public static string Archive_Locate {
+            get {
+                return ResourceManager.GetString("Archive_Locate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose the folder your invoice archive is in now.
+        /// </summary>
+        public static string Archive_LocateTitle {
+            get {
+                return ResourceManager.GetString("Archive_LocateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Importing needs the invoices folder. Connect the disk or network drive it&apos;s on and choose Try again; if you moved it, choose Find….
+        /// </summary>
+        public static string Archive_PanelHint {
+            get {
+                return ResourceManager.GetString("Archive_PanelHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Try again.
+        /// </summary>
+        public static string Archive_Retry {
+            get {
+                return ResourceManager.GetString("Archive_Retry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The invoices folder still isn&apos;t available:
+        ///{0}
+        ///
+        ///Connect the disk or network drive it&apos;s on..
+        /// </summary>
+        public static string Archive_StillUnavailable {
+            get {
+                return ResourceManager.GetString("Archive_StillUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The invoices folder isn&apos;t available: {0}.
+        /// </summary>
+        public static string Archive_Unavailable {
+            get {
+                return ResourceManager.GetString("Archive_Unavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You can search documents, but not open them or import until it&apos;s back. If you moved it, use Find….
+        /// </summary>
+        public static string Archive_UnavailableHint {
+            get {
+                return ResourceManager.GetString("Archive_UnavailableHint", resourceCulture);
             }
         }
         
@@ -427,6 +529,24 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mark them all as paid or collected.
+        /// </summary>
+        public static string Bulk_MarkPaid {
+            get {
+                return ResourceManager.GetString("Bulk_MarkPaid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An old archive is usually settled. Untick it and every document shows first in Search, as pending..
+        /// </summary>
+        public static string Bulk_MarkPaidHint {
+            get {
+                return ResourceManager.GetString("Bulk_MarkPaidHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0:N0} of {1:N0} match.
         /// </summary>
         public static string Bulk_Matches {
@@ -612,6 +732,15 @@ namespace Ordena.Frontend.Resources {
         public static string Bulk_ReportTitle {
             get {
                 return ResourceManager.GetString("Bulk_ReportTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import cancelled.
+        /// </summary>
+        public static string Bulk_ReportTitleCancelled {
+            get {
+                return ResourceManager.GetString("Bulk_ReportTitleCancelled", resourceCulture);
             }
         }
         
@@ -819,6 +948,15 @@ namespace Ordena.Frontend.Resources {
         public static string Column_Partner {
             get {
                 return ResourceManager.GetString("Column_Partner", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Status.
+        /// </summary>
+        public static string Column_Status {
+            get {
+                return ResourceManager.GetString("Column_Status", resourceCulture);
             }
         }
         
@@ -1220,6 +1358,18 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to There is no backup in that folder:
+        ///{0}
+        ///
+        ///Rebuild the index from the folders and the file names? Ordena reads each PDF once..
+        /// </summary>
+        public static string FirstRun_AskRebuild {
+            get {
+                return ResourceManager.GetString("FirstRun_AskRebuild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The folder couldn&apos;t be created:
         ///{0}
         ///
@@ -1237,6 +1387,33 @@ namespace Ordena.Frontend.Resources {
         public static string FirstRun_ChangeFolder {
             get {
                 return ResourceManager.GetString("FirstRun_ChangeFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to I already have an invoice archive.
+        /// </summary>
+        public static string FirstRun_ExistingArchive {
+            get {
+                return ResourceManager.GetString("FirstRun_ExistingArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The invoices folder from another PC, or from before Windows was reinstalled: Ordena gets its index back..
+        /// </summary>
+        public static string FirstRun_ExistingArchiveHint {
+            get {
+                return ResourceManager.GetString("FirstRun_ExistingArchiveHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The folder that holds the years (2025, 2026…) and _backup..
+        /// </summary>
+        public static string FirstRun_ExistingFolderHint {
+            get {
+                return ResourceManager.GetString("FirstRun_ExistingFolderHint", resourceCulture);
             }
         }
         
@@ -1259,6 +1436,25 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to That folder doesn&apos;t exist:
+        ///{0}.
+        /// </summary>
+        public static string FirstRun_FolderMissing {
+            get {
+                return ResourceManager.GetString("FirstRun_FolderMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How do you want to start?.
+        /// </summary>
+        public static string FirstRun_HowToStart {
+            get {
+                return ResourceManager.GetString("FirstRun_HowToStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Language.
         /// </summary>
         public static string FirstRun_Language {
@@ -1268,11 +1464,74 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Start from scratch.
+        /// </summary>
+        public static string FirstRun_NewArchive {
+            get {
+                return ResourceManager.GetString("FirstRun_NewArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ordena creates the invoices folder and fills it with what you import..
+        /// </summary>
+        public static string FirstRun_NewArchiveHint {
+            get {
+                return ResourceManager.GetString("FirstRun_NewArchiveHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose your invoices folder.
+        /// </summary>
+        public static string FirstRun_PickExistingTitle {
+            get {
+                return ResourceManager.GetString("FirstRun_PickExistingTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose the invoices folder.
         /// </summary>
         public static string FirstRun_PickFolderTitle {
             get {
                 return ResourceManager.GetString("FirstRun_PickFolderTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rebuilding the index….
+        /// </summary>
+        public static string FirstRun_RebuildProgress {
+            get {
+                return ResourceManager.GetString("FirstRun_RebuildProgress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Index rebuilt: {0:N0} documents from {1:N0} suppliers and customers..
+        /// </summary>
+        public static string FirstRun_Rebuilt {
+            get {
+                return ResourceManager.GetString("FirstRun_Rebuilt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0:N0} PDFs aren&apos;t named the way Ordena names them: you&apos;ll find them in Settings → Check folder..
+        /// </summary>
+        public static string FirstRun_RebuiltLeftOut {
+            get {
+                return ResourceManager.GetString("FirstRun_RebuiltLeftOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restored the backup from {0:d} at {0:t}: {1:N0} documents..
+        /// </summary>
+        public static string FirstRun_Restored {
+            get {
+                return ResourceManager.GetString("FirstRun_Restored", resourceCulture);
             }
         }
         
@@ -1747,6 +2006,33 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Collected.
+        /// </summary>
+        public static string Payment_Collected {
+            get {
+                return ResourceManager.GetString("Payment_Collected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Paid.
+        /// </summary>
+        public static string Payment_Paid {
+            get {
+                return ResourceManager.GetString("Payment_Paid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pending.
+        /// </summary>
+        public static string Payment_Pending {
+            get {
+                return ResourceManager.GetString("Payment_Pending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No preview.
         /// </summary>
         public static string Preview_None {
@@ -1770,6 +2056,33 @@ namespace Ordena.Frontend.Resources {
         public static string Preview_Unavailable {
             get {
                 return ResourceManager.GetString("Preview_Unavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string Progress_Cancel {
+            get {
+                return ResourceManager.GetString("Progress_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancelling….
+        /// </summary>
+        public static string Progress_Cancelling {
+            get {
+                return ResourceManager.GetString("Progress_Cancelling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File {0:N0} of {1:N0} · {2} of {3}.
+        /// </summary>
+        public static string Progress_Files {
+            get {
+                return ResourceManager.GetString("Progress_Files", resourceCulture);
             }
         }
         
@@ -1869,6 +2182,33 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0:N0} documents not paid or collected yet.
+        /// </summary>
+        public static string Search_PendingMany {
+            get {
+                return ResourceManager.GetString("Search_PendingMany", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 1 document not paid or collected yet.
+        /// </summary>
+        public static string Search_PendingOne {
+            get {
+                return ResourceManager.GetString("Search_PendingOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Click to mark it paid or collected.
+        /// </summary>
+        public static string Search_PendingTagHint {
+            get {
+                return ResourceManager.GetString("Search_PendingTagHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Find this document&apos;s file.
         /// </summary>
         public static string Search_PickFileTitle {
@@ -1905,11 +2245,200 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show all.
+        /// </summary>
+        public static string Search_ShowAll {
+            get {
+                return ResourceManager.GetString("Search_ShowAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show only these.
+        /// </summary>
+        public static string Search_ShowPending {
+            get {
+                return ResourceManager.GetString("Search_ShowPending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Showing {0:N0} of {1:N0}: narrow the search.
         /// </summary>
         public static string Search_Truncated {
             get {
                 return ResourceManager.GetString("Search_Truncated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to They&apos;re kept inside the invoices folder, in _backup, each time you close Ordena after changes. The last 10 are kept: with them everything comes back on a new PC..
+        /// </summary>
+        public static string Settings_BackupHint {
+            get {
+                return ResourceManager.GetString("Settings_BackupHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Back up now.
+        /// </summary>
+        public static string Settings_BackupNow {
+            get {
+                return ResourceManager.GetString("Settings_BackupNow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Backups.
+        /// </summary>
+        public static string Settings_BackupTitle {
+            get {
+                return ResourceManager.GetString("Settings_BackupTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Change location….
+        /// </summary>
+        public static string Settings_ChangeLocation {
+            get {
+                return ResourceManager.GetString("Settings_ChangeLocation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check folder.
+        /// </summary>
+        public static string Settings_Check {
+            get {
+                return ResourceManager.GetString("Settings_Check", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All in order: {0:N0} documents, each with its file..
+        /// </summary>
+        public static string Settings_CheckAllGood {
+            get {
+                return ResourceManager.GetString("Settings_CheckAllGood", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Puts back the files that were moved or renamed by hand in Explorer, and finds PDFs copied into the folder without going through Ordena..
+        /// </summary>
+        public static string Settings_CheckHint {
+            get {
+                return ResourceManager.GetString("Settings_CheckHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Documents without a file: {0:N0}.
+        /// </summary>
+        public static string Settings_CheckMissing {
+            get {
+                return ResourceManager.GetString("Settings_CheckMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Their file is nowhere in the folder. If you know where it is, find it and Ordena links it again..
+        /// </summary>
+        public static string Settings_CheckMissingHint {
+            get {
+                return ResourceManager.GetString("Settings_CheckMissingHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checking the invoices folder….
+        /// </summary>
+        public static string Settings_CheckProgress {
+            get {
+                return ResourceManager.GetString("Settings_CheckProgress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Put back in place (moved or renamed by hand): {0:N0}.
+        /// </summary>
+        public static string Settings_CheckRelinked {
+            get {
+                return ResourceManager.GetString("Settings_CheckRelinked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0:N0} documents checked..
+        /// </summary>
+        public static string Settings_CheckSummary {
+            get {
+                return ResourceManager.GetString("Settings_CheckSummary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check folder.
+        /// </summary>
+        public static string Settings_CheckTitle {
+            get {
+                return ResourceManager.GetString("Settings_CheckTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PDFs not in Ordena: {0:N0}.
+        /// </summary>
+        public static string Settings_CheckUnknown {
+            get {
+                return ResourceManager.GetString("Settings_CheckUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Those already named the way Ordena names them are added as they are, without moving them; the others go to manual import..
+        /// </summary>
+        public static string Settings_CheckUnknownHint {
+            get {
+                return ResourceManager.GetString("Settings_CheckUnknownHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Available.
+        /// </summary>
+        public static string Settings_FolderAvailable {
+            get {
+                return ResourceManager.GetString("Settings_FolderAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If you moved the folder yourself, use Change location. To take it to another disk, use Move folder: Ordena copies and checks every file..
+        /// </summary>
+        public static string Settings_FolderHint {
+            get {
+                return ResourceManager.GetString("Settings_FolderHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invoices folder.
+        /// </summary>
+        public static string Settings_FolderTitle {
+            get {
+                return ResourceManager.GetString("Settings_FolderTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not available.
+        /// </summary>
+        public static string Settings_FolderUnavailable {
+            get {
+                return ResourceManager.GetString("Settings_FolderUnavailable", resourceCulture);
             }
         }
         
@@ -1941,6 +2470,162 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Last backup: {0:d}, {0:t}.
+        /// </summary>
+        public static string Settings_LastBackup {
+            get {
+                return ResourceManager.GetString("Settings_LastBackup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Find file.
+        /// </summary>
+        public static string Settings_LocateFile {
+            get {
+                return ResourceManager.GetString("Settings_LocateFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ordena now uses the folder:
+        ///{0}.
+        /// </summary>
+        public static string Settings_LocationChanged {
+            get {
+                return ResourceManager.GetString("Settings_LocationChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} · {1} · {2:d}.
+        /// </summary>
+        public static string Settings_MissingItem {
+            get {
+                return ResourceManager.GetString("Settings_MissingItem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move folder….
+        /// </summary>
+        public static string Settings_Move {
+            get {
+                return ResourceManager.GetString("Settings_Move", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move cancelled. Nothing has changed..
+        /// </summary>
+        public static string Settings_MoveCancelled {
+            get {
+                return ResourceManager.GetString("Settings_MoveCancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The invoices folder will be copied to:
+        ///{0}
+        ///
+        ///Ordena checks every file, and keeps using the current folder until everything has been copied. Continue?.
+        /// </summary>
+        public static string Settings_MoveConfirm {
+            get {
+                return ResourceManager.GetString("Settings_MoveConfirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The invoices folder is now in:
+        ///{0}
+        ///
+        ///Delete the old folder?
+        ///{1}
+        ///
+        ///Only the files that have an identical copy in the new one are deleted..
+        /// </summary>
+        public static string Settings_MoveDone {
+            get {
+                return ResourceManager.GetString("Settings_MoveDone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose where to move the invoices folder.
+        /// </summary>
+        public static string Settings_MovePickTitle {
+            get {
+                return ResourceManager.GetString("Settings_MovePickTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Moving the invoices folder….
+        /// </summary>
+        public static string Settings_MoveProgress {
+            get {
+                return ResourceManager.GetString("Settings_MoveProgress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There are files in {0} already. Choose another folder..
+        /// </summary>
+        public static string Settings_MoveTargetNotEmpty {
+            get {
+                return ResourceManager.GetString("Settings_MoveTargetNotEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No backup yet..
+        /// </summary>
+        public static string Settings_NoBackupYet {
+            get {
+                return ResourceManager.GetString("Settings_NoBackupYet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Old folder deleted..
+        /// </summary>
+        public static string Settings_OldCopyDeleted {
+            get {
+                return ResourceManager.GetString("Settings_OldCopyDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Old folder deleted, except {0:N0} files that had no copy in the new one. They are still in:
+        ///{1}.
+        /// </summary>
+        public static string Settings_OldCopyKept {
+            get {
+                return ResourceManager.GetString("Settings_OldCopyKept", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add to Ordena.
+        /// </summary>
+        public static string Settings_Register {
+            get {
+                return ResourceManager.GetString("Settings_Register", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Added to Ordena: {0:N0}.
+        ///For manual import: {1:N0}..
+        /// </summary>
+        public static string Settings_Registered {
+            get {
+                return ResourceManager.GetString("Settings_Registered", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The new language applies when Ordena restarts..
         /// </summary>
         public static string Settings_RestartNeeded {
@@ -1959,10 +2644,21 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A folder is being imported. Wait until it finishes..
+        /// </summary>
+        public static string Settings_WaitForBulkImport {
+            get {
+                return ResourceManager.GetString("Settings_WaitForBulkImport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The invoices folder isn&apos;t available:
         ///{0}
         ///
-        ///Connect the disk and choose Yes to try again. With No you can still search, but not open or import files until it&apos;s back..
+        ///If it&apos;s on an external disk or a network drive, connect it and choose Try again. If you moved it, choose Find… and pick where it is now.
+        ///
+        ///With Continue you can search documents, but not open them or import until it&apos;s back..
         /// </summary>
         public static string Startup_ArchiveUnavailable {
             get {

@@ -18,6 +18,7 @@ internal sealed class MaintenanceService(
     SqliteBackup backup,
     JournalRecovery recovery,
     ArchiveCheck archiveCheck,
+    FileRegistration registration,
     IClock clock,
     ILogger<MaintenanceService> logger) : IMaintenanceService
 {
@@ -75,6 +76,14 @@ internal sealed class MaintenanceService(
         return root.IsSuccess
             ? Result.Ok(await archiveCheck.RunAsync(root.Value, ct).ConfigureAwait(false))
             : Result.Fail<ArchiveCheckReport>(root.Error.Value, root.Detail);
+    }, ct);
+
+    public Task<Result<RegisterReport>> RegisterFilesAsync(IReadOnlyList<string> paths, CancellationToken ct) => Task.Run(async () =>
+    {
+        var root = await GetArchiveRootAsync(ct).ConfigureAwait(false);
+        return root.IsSuccess
+            ? Result.Ok(await registration.RunAsync(root.Value, paths, ct).ConfigureAwait(false))
+            : Result.Fail<RegisterReport>(root.Error.Value, root.Detail);
     }, ct);
 
     private async Task<Result> BackupAsync(bool onlyIfChanged, CancellationToken ct)

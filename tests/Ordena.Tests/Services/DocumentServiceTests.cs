@@ -57,7 +57,7 @@ public sealed class DocumentServiceTests : IDisposable
 
         Assert.Equal(
             new DocumentDetails(id, Telefonica, "A-2026/0123", new DateOnly(2026, 3, 14), DocType.Factura,
-                Direction.Recibida, TelefonicaPath, "a.pdf", ImportedAt, ImportedAt, null),
+                Direction.Recibida, TelefonicaPath, "a.pdf", ImportedAt, ImportedAt, null, IsPaid: false),
             details);
     }
 
@@ -336,6 +336,7 @@ public sealed class DocumentServiceTests : IDisposable
         await _documents.DeleteAsync(deleted, Ct);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _documents.EditAsync(Edit(deleted), Ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _documents.SetPaidAsync(deleted, true, Ct));
         await Assert.ThrowsAsync<InvalidOperationException>(() => _documents.DeleteAsync(deleted, Ct));
         await Assert.ThrowsAsync<InvalidOperationException>(() => _documents.RestoreAsync(active, Ct));
     }
@@ -347,6 +348,46 @@ public sealed class DocumentServiceTests : IDisposable
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
             _documents.EditAsync(Edit(1, partner: partner, number: number), Ct));
+    }
+
+    // «Marcar como pagada»: the status isn't in the file name, so only the row changes; and with no file to
+    // touch, it works with the archive's disk unplugged too.
+    [Fact]
+    public async Task Marking_a_document_paid_changes_only_its_row()
+    {
+        var id = await ImportAsync("a");
+        _clock.UtcNow = Later;
+        var unplugged = _archive.Root + "-unplugged";
+        Directory.Move(_archive.Root, unplugged);
+        try
+        {
+            Assert.True((await _documents.SetPaidAsync(id, true, Ct)).IsSuccess);
+        }
+        finally
+        {
+            Directory.Move(unplugged, _archive.Root);
+        }
+
+        var details = await _documents.GetAsync(id, Ct);
+        Assert.Equal((true, Later, TelefonicaPath), (details.IsPaid, details.UpdatedAt, details.RelativePath));
+        Assert.Equal([TelefonicaPath], _archive.Files());
+        Assert.Equal(1L, _db.Scalar("SELECT COUNT(*) FROM FileOperations")); // only the import's
+
+        await _documents.SetPaidAsync(id, false, Ct);
+        Assert.False((await _documents.GetAsync(id, Ct)).IsPaid);
+    }
+
+    [Fact]
+    public async Task An_edit_that_only_marks_it_paid_moves_nothing()
+    {
+        var id = await ImportAsync("a");
+
+        var result = await _documents.EditAsync(Edit(id, isPaid: true), Ct);
+
+        Assert.True(result.Value.IsPaid);
+        Assert.True((await _documents.GetAsync(id, Ct)).IsPaid);
+        Assert.Equal([TelefonicaPath], _archive.Files());
+        Assert.Equal(1L, _db.Scalar("SELECT COUNT(*) FROM FileOperations"));
     }
 
     private async Task<int> ImportAsync(
@@ -371,7 +412,8 @@ public sealed class DocumentServiceTests : IDisposable
         string number = "A-2026/0123",
         string date = "2026-03-14",
         DocType type = DocType.Factura,
-        Direction direction = Direction.Recibida) => new()
+        Direction direction = Direction.Recibida,
+        bool isPaid = false) => new()
     {
         Id = id,
         PartnerName = partner,
@@ -379,5 +421,6 @@ public sealed class DocumentServiceTests : IDisposable
         IssueDate = DateOnly.Parse(date, CultureInfo.InvariantCulture),
         Type = type,
         Direction = direction,
+        IsPaid = isPaid,
     };
 }

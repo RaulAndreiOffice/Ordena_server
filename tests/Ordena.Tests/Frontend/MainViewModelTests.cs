@@ -16,6 +16,8 @@ public sealed class MainViewModelTests : IDisposable
     private readonly CultureScope _spanish = new("es-ES");
     private readonly FakeSettingsService _settings = new() { ArchiveRoot = @"D:\Facturas" };
     private readonly FakeImportService _import = new();
+    private readonly FakeArchiveState _archive = new() { Root = @"D:\Facturas" };
+    private readonly FakeDialogs _dialogs = new();
     private readonly MainViewModel _main;
 
     public MainViewModelTests()
@@ -30,20 +32,24 @@ public sealed class MainViewModelTests : IDisposable
             .AddSingleton<IPartnerService>(new FakePartnerService())
             .AddSingleton<IPreviewService, FakePreview>()
             .AddSingleton<IFilePickerService, FakeFilePicker>()
-            .AddSingleton<IDialogService, FakeDialogs>()
+            .AddSingleton<IDialogService>(_dialogs)
             .AddSingleton<IShellService, FakeShell>()
             .AddSingleton<ISettingsService>(_settings)
             .AddSingleton<IAppLifetime, FakeAppLifetime>()
             .AddSingleton<IBulkImportService, FakeBulkImportService>()
+            .AddSingleton<IArchiveState>(_archive)
+            .AddSingleton<IMaintenanceService, FakeMaintenanceService>()
+            .AddSingleton<IArchiveService, FakeArchiveService>()
             .AddSingleton<SearchViewModel>()
             .AddSingleton<ImportViewModel>()
             .AddSingleton<BulkImportViewModel>()
             .AddTransient<DocumentFormViewModel>()
             .AddTransient<TrashViewModel>()
             .AddTransient<SettingsViewModel>()
+            .AddTransient<ArchiveSettingsViewModel>()
             .BuildServiceProvider();
         _main = new MainViewModel(
-            services.GetRequiredService<INavigationService>(), _settings, services.GetRequiredService<ILocalizer>(),
+            services.GetRequiredService<INavigationService>(), _archive, _dialogs, services.GetRequiredService<ILocalizer>(),
             services.GetRequiredService<IMessenger>());
     }
 
@@ -108,6 +114,72 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(["a.pdf", "b.pdf"], import.Queue.Select(i => i.FileName));
         Assert.Equal(@"C:\Descargas\a.pdf", import.CurrentItem?.Path);
         Assert.Equal([@"C:\Descargas\a.pdf"], _import.Checked);
+    }
+
+    // Without the archive folder search still works, under a banner; the import pages can't, so a panel
+    // takes their place. Both go once the folder is back.
+    [Fact]
+    public async Task While_the_folder_is_missing_a_banner_shows_and_the_import_pages_give_way_to_a_panel()
+    {
+        _archive.IsAvailable = false;
+        await _main.InitializeAsync();
+
+        Assert.Equal((true, false), (_main.ShowArchiveBanner, _main.ShowArchivePanel));
+        Assert.Equal(@"La carpeta de facturas no está disponible: D:\Facturas", _main.ArchiveUnavailableText);
+
+        await _main.NavigateCommand.ExecuteAsync(_main.NavigationSections[0].Items[1]);
+        Assert.Equal((false, true), (_main.ShowArchiveBanner, _main.ShowArchivePanel));
+        await _main.NavigateCommand.ExecuteAsync(_main.NavigationSections[0].Items[2]);
+        Assert.Equal((false, true), (_main.ShowArchiveBanner, _main.ShowArchivePanel));
+
+        var changed = new List<string?>();
+        _main.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        _archive.IsAvailable = true;
+
+        Assert.Equal((false, false), (_main.ShowArchiveBanner, _main.ShowArchivePanel));
+        Assert.Contains(nameof(_main.ShowArchivePanel), changed);
+    }
+
+    // A disk plugged back in is noticed on the next page change.
+    [Fact]
+    public async Task Each_page_change_looks_for_the_folder_again()
+    {
+        _archive.IsAvailable = false;
+        await _main.InitializeAsync();
+        _archive.AvailableOnRefresh = true;
+
+        await _main.NavigateCommand.ExecuteAsync(_main.NavigationSections[0].Items[3]);
+
+        Assert.Equal(2, _archive.Refreshes);
+        Assert.False(_main.ShowArchiveBanner);
+    }
+
+    [Fact]
+    public async Task Retry_says_so_when_the_folder_is_still_missing_and_Find_looks_for_it()
+    {
+        _archive.IsAvailable = false;
+        _archive.AvailableOnRefresh = false;
+        await _main.InitializeAsync();
+
+        await _main.RetryArchiveCommand.ExecuteAsync(null);
+        Assert.StartsWith("La carpeta de facturas sigue sin estar disponible", Assert.Single(_dialogs.Errors));
+
+        _archive.LocateAnswer = @"E:\Facturas";
+        await _main.LocateArchiveCommand.ExecuteAsync(null);
+        Assert.False(_main.ShowArchiveBanner);
+    }
+
+    [Fact]
+    public async Task The_footer_follows_the_archive_when_it_moves()
+    {
+        await _main.InitializeAsync();
+        var changed = new List<string?>();
+        _main.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _archive.SetRoot(@"E:\Facturas");
+
+        Assert.Equal(@"Carpeta de facturas: E:\Facturas", _main.ArchiveText);
+        Assert.Contains(nameof(_main.ArchiveText), changed);
     }
 
     // The sidebar names its icons by key; each must exist in Icons.xaml and be a valid geometry.

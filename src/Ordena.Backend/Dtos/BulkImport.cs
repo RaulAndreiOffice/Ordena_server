@@ -58,7 +58,7 @@ public sealed record BulkPartner(string Name, int Count, string? ExistingName);
 
 // Names that are probably the same partner ("Telefonica" ×120, "Telefonica Espana" ×3): the same once
 // normalized, or one's words inside the other's. SuggestedName is the archive's partner when one matches,
-// otherwise the spelling used most.
+// otherwise the spelling used most (the longer one on a tie).
 public sealed record BulkPartnerGroup(IReadOnlyList<string> Names, string SuggestedName);
 
 public sealed record BulkImportPreview(
@@ -83,7 +83,8 @@ public sealed record BulkImportItem(
 public sealed record BulkImportRun(
     Direction Direction,
     IReadOnlyList<BulkImportItem> Items,
-    IReadOnlyDictionary<string, string> PartnerMap);
+    IReadOnlyDictionary<string, string> PartnerMap,
+    bool MarkPaid = true);
 
 // Reported after each file: "1.234 de 3.000 · factura.pdf".
 public sealed record BulkImportProgress(int Done, int Total, string CurrentFile);

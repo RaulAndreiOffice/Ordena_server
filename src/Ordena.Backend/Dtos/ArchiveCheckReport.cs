@@ -16,3 +16,7 @@ public sealed record ArchiveCheckReport(
 
 // FoundAt and MovedTo are relative to the archive root.
 public sealed record RelinkedFile(int DocumentId, string FoundAt, string MovedTo);
+
+// "Añadir a Ordena" for the unknown PDFs: how many were registered where they are, and the full paths
+// of the rest, for the manual import queue.
+public sealed record RegisterReport(int Registered, IReadOnlyList<string> Remaining);

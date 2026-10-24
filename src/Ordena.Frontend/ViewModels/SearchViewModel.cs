@@ -13,7 +13,8 @@ using Ordena.Frontend.Services;
 namespace Ordena.Frontend.ViewModels;
 
 // The search page: what is typed and the filters go to the database as one query, and its first 500
-// rows replace the grid in one assignment. A singleton, so the query and results survive switching pages.
+// rows replace the grid in one assignment, the pending ones (not paid or collected yet) always first.
+// A singleton, so the query and results survive switching pages.
 public sealed partial class SearchViewModel : PageViewModel, IRecipient<DocumentsChangedMessage>
 {
     private readonly ISearchService _search;
@@ -51,6 +52,16 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasCriteria))]
     private FilterOption<Direction>? _selectedDirection;
+
+    // «Ver solo pendientes».
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCriteria), nameof(ShowPendingBar))]
+    private bool _isPendingOnly;
+
+    // Every pending document, whatever the search: the reminder above the grid.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPendingBar), nameof(PendingText))]
+    private int _pendingTotal;
 
     // Changed only by Sort, which searches itself.
     [ObservableProperty]
@@ -140,7 +151,16 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
         || SelectedYear?.Value is not null
         || SelectedQuarter?.Value is not null
         || SelectedType?.Value is not null
-        || SelectedDirection?.Value is not null;
+        || SelectedDirection?.Value is not null
+        || IsPendingOnly;
+
+    // The bar above the grid: while anything is pending, and while only the pending ones are shown.
+    public bool ShowPendingBar => PendingTotal > 0 || IsPendingOnly;
+
+    // "3 pendientes de pago o cobro"
+    public string PendingText => PendingTotal == 1
+        ? _localizer.Get("Search_PendingOne")
+        : _localizer.Format("Search_PendingMany", PendingTotal);
 
     // How long typing must pause before the search runs. Zero in tests.
     public TimeSpan SearchDelay { get; set; } = TimeSpan.FromMilliseconds(200);
@@ -172,6 +192,7 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
     partial void OnSelectedQuarterChanged(FilterOption<int>? value) => Schedule(TimeSpan.Zero);
     partial void OnSelectedTypeChanged(FilterOption<DocType>? value) => Schedule(TimeSpan.Zero);
     partial void OnSelectedDirectionChanged(FilterOption<Direction>? value) => Schedule(TimeSpan.Zero);
+    partial void OnIsPendingOnlyChanged(bool value) => Schedule(TimeSpan.Zero);
 
     // The same column again flips the order; another column starts A→Z, except the date, newest first.
     [RelayCommand]
@@ -187,14 +208,42 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
     private Task ClearFiltersAsync()
     {
         _batching = true;
-        Text = "";
-        SelectedYear = Years[0];
-        SelectedQuarter = Quarters[0];
-        SelectedType = Types[0];
-        SelectedDirection = Directions[0];
+        ResetCriteria();
         _batching = false;
         FocusRequest++;
         return SearchNowAsync();
+    }
+
+    // «Ver solo pendientes»: every pending document, so nothing typed or filtered hides one.
+    [RelayCommand]
+    private Task ShowPendingOnlyAsync()
+    {
+        _batching = true;
+        ResetCriteria();
+        IsPendingOnly = true;
+        _batching = false;
+        return SearchNowAsync();
+    }
+
+    // «Ver todos»
+    [RelayCommand]
+    private void ShowAll() => IsPendingOnly = false;
+
+    // «Marcar como pagada / cobrada / pendiente». The grid reloads, so the row moves: pending ones come first.
+    [RelayCommand]
+    private async Task TogglePaidAsync(DocumentListItem? item)
+    {
+        if ((item ?? SelectedItem) is not { } document)
+            return;
+
+        var changed = await _documents.SetPaidAsync(document.Id, !document.IsPaid, CancellationToken.None);
+        if (!changed.IsSuccess)
+        {
+            await _dialogs.ShowErrorAsync(_localizer.Error(changed.Error.Value));
+            return;
+        }
+
+        _messenger.Send(new DocumentsChangedMessage(DocumentsChange.Edited, document.Id));
     }
 
     [RelayCommand]
@@ -277,6 +326,16 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
         }
     }
 
+    private void ResetCriteria()
+    {
+        Text = "";
+        SelectedYear = Years[0];
+        SelectedQuarter = Quarters[0];
+        SelectedType = Types[0];
+        SelectedDirection = Directions[0];
+        IsPendingOnly = false;
+    }
+
     private SearchQuery BuildQuery() => new()
     {
         Text = Text,
@@ -284,6 +343,7 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
         Quarter = SelectedQuarter?.Value,
         Type = SelectedType?.Value,
         Direction = SelectedDirection?.Value,
+        PendingOnly = IsPendingOnly,
         SortBy = SortBy,
         Descending = SortDescending,
     };
@@ -301,6 +361,7 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
                 : _localizer.Format("Search_ResultMany", result.TotalCount);
         IsArchiveEmpty = result.TotalCount == 0 && !HasCriteria;
         HasNoMatches = result.TotalCount == 0 && HasCriteria;
+        PendingTotal = result.PendingTotal;
     }
 
     // The year filter offers the years that have documents. A year that just lost its last document

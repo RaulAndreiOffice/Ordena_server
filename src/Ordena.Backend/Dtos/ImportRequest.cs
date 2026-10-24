@@ -16,6 +16,9 @@ public sealed record ImportRequest
     public required DocType Type { get; init; }
     public required Direction Direction { get; init; }
 
+    // Already paid (received) or collected (issued). A new document is pending unless the user says so.
+    public bool IsPaid { get; init; }
+
     // Set after the user confirmed the DuplicateNumber warning: request with { ConfirmDuplicate = true }.
     public bool ConfirmDuplicate { get; init; }
 

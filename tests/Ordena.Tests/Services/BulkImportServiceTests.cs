@@ -109,6 +109,17 @@ public sealed class BulkImportServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Equally_used_spellings_suggest_the_more_complete_one()
+    {
+        Write("14-03-2026_Iberdrola_1.pdf");
+        Write("15-03-2026_Iberdrola Clientes_2.pdf");
+
+        var group = Assert.Single((await _bulk.AnalyzeAsync(Options(), Ct)).Value.Groups);
+
+        Assert.Equal("Iberdrola Clientes", group.SuggestedName);
+    }
+
+    [Fact]
     public async Task A_typed_pattern_is_used_instead_of_the_detected_one()
     {
         Write("Repsol_T-1_14-03-2026.pdf");
@@ -191,6 +202,22 @@ public sealed class BulkImportServiceTests : IDisposable
 
         using var db = _db.CreateContext();
         Assert.Equal(["Iberdrola", "Repsol S.A."], await db.Partners.Select(p => p.Name).OrderBy(n => n).ToListAsync(Ct));
+    }
+
+    // «Marcar todas como pagadas o cobradas», on by default: an old archive is normally settled.
+    [Theory]
+    [InlineData(true, 0L)]
+    [InlineData(false, 2L)]
+    public async Task The_run_marks_every_document_paid_or_pending(bool markPaid, long pending)
+    {
+        Write("14-03-2026_Repsol S.A._T-1.pdf");
+        Write("02-04-2026_Iberdrola_F-9.pdf");
+        var preview = (await _bulk.AnalyzeAsync(Options(), Ct)).Value;
+
+        await _bulk.RunAsync(Run(preview.Rows) with { MarkPaid = markPaid }, null, Ct);
+
+        Assert.Equal(2L, _db.Scalar("SELECT COUNT(*) FROM Documents"));
+        Assert.Equal(pending, _db.Scalar("SELECT COUNT(*) FROM Documents WHERE IsPaid = 0"));
     }
 
     [Fact]

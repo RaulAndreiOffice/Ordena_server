@@ -1,0 +1,25 @@
+<!-- A long job on the archive (moving it, checking it, rebuilding the index): modal, so nothing else can
+     touch the archive meanwhile. Cancelar, or closing the window, asks the job to stop; it closes itself once
+     the job has stopped. -->
+<Window x:Class="Ordena.Frontend.Views.Shared.ProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:res="clr-namespace:Ordena.Frontend.Resources"
+        Title="{x:Static res:Strings.Dialog_Title}"
+        Icon="{StaticResource Logo.Mark}"
+        Width="520" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource Brush.White}"
+        Foreground="{StaticResource Brush.Text}"
+        FontFamily="{StaticResource Font.Sans}"
+        FontSize="14">
+
+    <StackPanel Margin="28,24">
+        <TextBlock x:Name="TitleText" Style="{StaticResource Text.Heading}" TextWrapping="Wrap" />
+        <ProgressBar x:Name="Bar" Height="8" Margin="0,20,0,10" IsIndeterminate="True"
+                     Foreground="{StaticResource Brush.Primary}" />
+        <TextBlock x:Name="DetailText" Style="{StaticResource Text.Secondary}" TextTrimming="CharacterEllipsis" />
+        <Button x:Name="CancelButton" Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Progress_Cancel}"
+                HorizontalAlignment="Right" Margin="0,20,0,0" Click="OnCancelClick" />
+    </StackPanel>
+</Window>

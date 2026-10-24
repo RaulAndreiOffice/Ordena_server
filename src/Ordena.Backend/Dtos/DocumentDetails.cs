@@ -14,4 +14,5 @@ public sealed record DocumentDetails(
     string OriginalName,
     DateTime ImportedAt,
     DateTime UpdatedAt,
-    DateTime? DeletedAt);
+    DateTime? DeletedAt,
+    bool IsPaid = true);

@@ -25,6 +25,8 @@ public sealed class DocumentFormViewModelTests : IDisposable
         Assert.Equal("Proveedor", _form.PartnerLabel);
         Assert.Equal(Enum.GetValues<DocType>(), _form.Types.Select(t => t.Type));
         Assert.Equal("Factura", _form.SelectedType.Label);
+        Assert.False(_form.IsPaid); // pending until the user says it is paid
+        Assert.Equal("Pagada", _form.PaidLabel);
     }
 
     [Fact]
@@ -37,7 +39,9 @@ public sealed class DocumentFormViewModelTests : IDisposable
 
         Assert.False(_form.IsReceived);
         Assert.Equal("Cliente", _form.PartnerLabel);
+        Assert.Equal("Cobrada", _form.PaidLabel); // an issued invoice is collected
         Assert.Contains(nameof(_form.IsIssued), changed);
+        Assert.Contains(nameof(_form.PaidLabel), changed);
         Assert.Contains(nameof(_form.PartnerLabel), changed);
     }
 
@@ -70,6 +74,7 @@ public sealed class DocumentFormViewModelTests : IDisposable
         Fill();
         _form.IsIssued = true;
         _form.SelectedType = _form.Types.Single(t => t.Type == DocType.Proforma);
+        _form.IsPaid = true;
 
         Assert.True(_form.Validate());
         var request = _form.ToImportRequest(@"C:\Descargas\scan.pdf", confirmDuplicate: true);
@@ -80,6 +85,7 @@ public sealed class DocumentFormViewModelTests : IDisposable
         Assert.Equal(new DateOnly(2026, 3, 14), request.IssueDate);
         Assert.Equal(DocType.Proforma, request.Type);
         Assert.Equal(Direction.Emitida, request.Direction);
+        Assert.True(request.IsPaid);
         Assert.True(request.ConfirmDuplicate);
     }
 
@@ -111,6 +117,7 @@ public sealed class DocumentFormViewModelTests : IDisposable
         Fill();
         _form.IsIssued = true;
         _form.SelectedType = _form.Types.Single(t => t.Type == DocType.Recibo);
+        _form.IsPaid = true;
         _form.Validate();
         _form.PartnerName = "";
         Assert.True(_form.HasErrors);
@@ -126,6 +133,7 @@ public sealed class DocumentFormViewModelTests : IDisposable
         Assert.False(_form.HasErrors);
         Assert.True(_form.IsIssued);
         Assert.Equal(DocType.Recibo, _form.SelectedType.Type);
+        Assert.False(_form.IsPaid); // the next file is pending again, so none is forgotten
         Assert.Equal(focus + 1, _form.FocusRequest);
     }
 
@@ -151,6 +159,7 @@ public sealed class DocumentFormViewModelTests : IDisposable
             IssueDate = new DateOnly(2026, 3, 14),
             Type = DocType.FacturaRectificativa,
             Direction = Direction.Emitida,
+            IsPaid = true, // as loaded
             ConfirmDuplicate = true,
         }, _form.ToEditRequest(7, confirmDuplicate: true));
     }

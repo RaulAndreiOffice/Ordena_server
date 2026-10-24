@@ -2,38 +2,44 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using Ordena.Backend.Services;
 using Ordena.Frontend.Messages;
 using Ordena.Frontend.Services;
 
 namespace Ordena.Frontend.ViewModels;
 
-// The shell: the sidebar, the current page, the window title and the footer.
+// The shell: the sidebar, the current page, the window title, the footer, and what is shown while the
+// archive folder is missing.
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly INavigationService _navigation;
-    private readonly ISettingsService _settings;
+    private readonly IArchiveState _archive;
+    private readonly IDialogService _dialogs;
     private readonly ILocalizer _localizer;
     private readonly IMessenger _messenger;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowArchiveBanner), nameof(ShowArchivePanel))]
     private PageViewModel? _currentPage;
 
     [ObservableProperty]
     private string _windowTitle;
 
-    // "Carpeta de facturas: D:\Facturas" in the footer.
-    [ObservableProperty]
-    private string _archiveText = "";
-
     public MainViewModel(
-        INavigationService navigation, ISettingsService settings, ILocalizer localizer, IMessenger messenger)
+        INavigationService navigation, IArchiveState archive, IDialogService dialogs, ILocalizer localizer, IMessenger messenger)
     {
         _navigation = navigation;
-        _settings = settings;
+        _archive = archive;
+        _dialogs = dialogs;
         _localizer = localizer;
         _messenger = messenger;
         _windowTitle = localizer.Get("App_Title");
+        archive.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ArchiveText));
+            OnPropertyChanged(nameof(ArchiveUnavailableText));
+            OnPropertyChanged(nameof(ShowArchiveBanner));
+            OnPropertyChanged(nameof(ShowArchivePanel));
+        };
 
         NavigationSections =
         [
@@ -63,16 +69,36 @@ public sealed partial class MainViewModel : ObservableObject
 
     public string VersionText { get; }
 
-    // Called once at startup, before the window shows: the footer, then the Search page.
-    public async Task InitializeAsync()
-    {
-        var settings = await _settings.GetAsync(CancellationToken.None);
-        ArchiveText = _localizer.Format("Footer_Archive", settings.ArchiveRoot ?? "");
-        await _navigation.NavigateToAsync<SearchViewModel>();
-    }
+    // "Carpeta de facturas: D:\Facturas" in the footer; it follows a move.
+    public string ArchiveText => _localizer.Format("Footer_Archive", _archive.Root ?? "");
+
+    // "La carpeta de facturas no está disponible: E:\Facturas", on the banner and the panel.
+    public string ArchiveUnavailableText => _localizer.Format("Archive_Unavailable", _archive.Root ?? "");
+
+    // While the folder is missing: a banner above every page, except where the panel says it already.
+    public bool ShowArchiveBanner => !_archive.IsAvailable && CurrentPage?.NeedsArchive != true;
+
+    // While the folder is missing: the panel instead of the pages that can't work without it (importing).
+    public bool ShowArchivePanel => !_archive.IsAvailable && CurrentPage?.NeedsArchive == true;
+
+    // Called once at startup, before the window shows: the Search page.
+    public Task InitializeAsync() => _navigation.NavigateToAsync<SearchViewModel>();
 
     [RelayCommand]
     private Task NavigateAsync(NavItem item) => _navigation.NavigateToAsync(item.PageType);
+
+    // "Reintentar": the disk may be plugged in again.
+    [RelayCommand]
+    private async Task RetryArchiveAsync()
+    {
+        await _archive.RefreshAsync();
+        if (!_archive.IsAvailable)
+            await _dialogs.ShowErrorAsync(_localizer.Format("Archive_StillUnavailable", _archive.Root ?? ""));
+    }
+
+    // "Buscar…": the folder was moved, and the user knows where.
+    [RelayCommand]
+    private Task LocateArchiveAsync() => _archive.LocateAsync();
 
     // PDFs dropped anywhere on the window go to the import queue. Import is shown first: that creates
     // the page if it hasn't been yet, so it is there to receive them.
@@ -99,5 +125,10 @@ public sealed partial class MainViewModel : ObservableObject
 
         var app = _localizer.Get("App_Title");
         WindowTitle = CurrentPage is null ? app : $"{app} — {CurrentPage.Title}";
+        RefreshArchive();
     }
+
+    // Each page change looks for the folder again, so a disk unplugged or plugged back in shows or hides
+    // the banner. async void like an event handler, so an unexpected error reaches App's handler.
+    private async void RefreshArchive() => await _archive.RefreshAsync();
 }

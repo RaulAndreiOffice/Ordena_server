@@ -49,6 +49,162 @@
   <data name="Settings_RestartNow" xml:space="preserve">
     <value>Restart now</value>
   </data>
+  <data name="Settings_FolderTitle" xml:space="preserve">
+    <value>Invoices folder</value>
+  </data>
+  <data name="Settings_FolderAvailable" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="Settings_FolderUnavailable" xml:space="preserve">
+    <value>Not available</value>
+  </data>
+  <data name="Settings_FolderHint" xml:space="preserve">
+    <value>If you moved the folder yourself, use Change location. To take it to another disk, use Move folder: Ordena copies and checks every file.</value>
+  </data>
+  <data name="Settings_ChangeLocation" xml:space="preserve">
+    <value>Change location…</value>
+  </data>
+  <data name="Settings_Move" xml:space="preserve">
+    <value>Move folder…</value>
+  </data>
+  <data name="Settings_LocationChanged" xml:space="preserve">
+    <value>Ordena now uses the folder:
+{0}</value>
+  </data>
+  <data name="Settings_MovePickTitle" xml:space="preserve">
+    <value>Choose where to move the invoices folder</value>
+  </data>
+  <data name="Settings_MoveConfirm" xml:space="preserve">
+    <value>The invoices folder will be copied to:
+{0}
+
+Ordena checks every file, and keeps using the current folder until everything has been copied. Continue?</value>
+  </data>
+  <data name="Settings_MoveProgress" xml:space="preserve">
+    <value>Moving the invoices folder…</value>
+  </data>
+  <data name="Settings_MoveCancelled" xml:space="preserve">
+    <value>Move cancelled. Nothing has changed.</value>
+  </data>
+  <data name="Settings_MoveTargetNotEmpty" xml:space="preserve">
+    <value>There are files in {0} already. Choose another folder.</value>
+  </data>
+  <data name="Settings_MoveDone" xml:space="preserve">
+    <value>The invoices folder is now in:
+{0}
+
+Delete the old folder?
+{1}
+
+Only the files that have an identical copy in the new one are deleted.</value>
+  </data>
+  <data name="Settings_OldCopyDeleted" xml:space="preserve">
+    <value>Old folder deleted.</value>
+  </data>
+  <data name="Settings_OldCopyKept" xml:space="preserve">
+    <value>Old folder deleted, except {0:N0} files that had no copy in the new one. They are still in:
+{1}</value>
+  </data>
+  <data name="Settings_WaitForBulkImport" xml:space="preserve">
+    <value>A folder is being imported. Wait until it finishes.</value>
+  </data>
+  <data name="Settings_BackupTitle" xml:space="preserve">
+    <value>Backups</value>
+  </data>
+  <data name="Settings_LastBackup" xml:space="preserve">
+    <value>Last backup: {0:d}, {0:t}</value>
+  </data>
+  <data name="Settings_NoBackupYet" xml:space="preserve">
+    <value>No backup yet.</value>
+  </data>
+  <data name="Settings_BackupHint" xml:space="preserve">
+    <value>They're kept inside the invoices folder, in _backup, each time you close Ordena after changes. The last 10 are kept: with them everything comes back on a new PC.</value>
+  </data>
+  <data name="Settings_BackupNow" xml:space="preserve">
+    <value>Back up now</value>
+  </data>
+  <data name="Settings_CheckTitle" xml:space="preserve">
+    <value>Check folder</value>
+  </data>
+  <data name="Settings_CheckHint" xml:space="preserve">
+    <value>Puts back the files that were moved or renamed by hand in Explorer, and finds PDFs copied into the folder without going through Ordena.</value>
+  </data>
+  <data name="Settings_Check" xml:space="preserve">
+    <value>Check folder</value>
+  </data>
+  <data name="Settings_CheckProgress" xml:space="preserve">
+    <value>Checking the invoices folder…</value>
+  </data>
+  <data name="Settings_CheckAllGood" xml:space="preserve">
+    <value>All in order: {0:N0} documents, each with its file.</value>
+  </data>
+  <data name="Settings_CheckSummary" xml:space="preserve">
+    <value>{0:N0} documents checked.</value>
+  </data>
+  <data name="Settings_CheckRelinked" xml:space="preserve">
+    <value>Put back in place (moved or renamed by hand): {0:N0}</value>
+  </data>
+  <data name="Settings_CheckMissing" xml:space="preserve">
+    <value>Documents without a file: {0:N0}</value>
+  </data>
+  <data name="Settings_CheckMissingHint" xml:space="preserve">
+    <value>Their file is nowhere in the folder. If you know where it is, find it and Ordena links it again.</value>
+  </data>
+  <data name="Settings_MissingItem" xml:space="preserve">
+    <value>{0} · {1} · {2:d}</value>
+  </data>
+  <data name="Settings_LocateFile" xml:space="preserve">
+    <value>Find file</value>
+  </data>
+  <data name="Settings_CheckUnknown" xml:space="preserve">
+    <value>PDFs not in Ordena: {0:N0}</value>
+  </data>
+  <data name="Settings_CheckUnknownHint" xml:space="preserve">
+    <value>Those already named the way Ordena names them are added as they are, without moving them; the others go to manual import.</value>
+  </data>
+  <data name="Settings_Register" xml:space="preserve">
+    <value>Add to Ordena</value>
+  </data>
+  <data name="Settings_Registered" xml:space="preserve">
+    <value>Added to Ordena: {0:N0}.
+For manual import: {1:N0}.</value>
+  </data>
+  <data name="Archive_Unavailable" xml:space="preserve">
+    <value>The invoices folder isn't available: {0}</value>
+  </data>
+  <data name="Archive_UnavailableHint" xml:space="preserve">
+    <value>You can search documents, but not open them or import until it's back. If you moved it, use Find…</value>
+  </data>
+  <data name="Archive_PanelHint" xml:space="preserve">
+    <value>Importing needs the invoices folder. Connect the disk or network drive it's on and choose Try again; if you moved it, choose Find…</value>
+  </data>
+  <data name="Archive_StillUnavailable" xml:space="preserve">
+    <value>The invoices folder still isn't available:
+{0}
+
+Connect the disk or network drive it's on.</value>
+  </data>
+  <data name="Archive_Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Archive_Locate" xml:space="preserve">
+    <value>Find…</value>
+  </data>
+  <data name="Archive_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Archive_LocateTitle" xml:space="preserve">
+    <value>Choose the folder your invoice archive is in now</value>
+  </data>
+  <data name="Progress_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Progress_Cancelling" xml:space="preserve">
+    <value>Cancelling…</value>
+  </data>
+  <data name="Progress_Files" xml:space="preserve">
+    <value>File {0:N0} of {1:N0} · {2} of {3}</value>
+  </data>
   <data name="Search_ImportButton" xml:space="preserve">
     <value>Import invoices</value>
   </data>
@@ -86,6 +242,48 @@ Find it? It will be linked to this document again.</value>
   </data>
   <data name="Search_PickFileTitle" xml:space="preserve">
     <value>Find this document's file</value>
+  </data>
+  <data name="Search_PendingOne" xml:space="preserve">
+    <value>1 document not paid or collected yet</value>
+  </data>
+  <data name="Search_PendingMany" xml:space="preserve">
+    <value>{0:N0} documents not paid or collected yet</value>
+  </data>
+  <data name="Search_ShowPending" xml:space="preserve">
+    <value>Show only these</value>
+  </data>
+  <data name="Search_ShowAll" xml:space="preserve">
+    <value>Show all</value>
+  </data>
+  <data name="Search_PendingTagHint" xml:space="preserve">
+    <value>Click to mark it paid or collected</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Payment_Paid" xml:space="preserve">
+    <value>Paid</value>
+  </data>
+  <data name="Payment_Collected" xml:space="preserve">
+    <value>Collected</value>
+  </data>
+  <data name="Payment_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Action_MarkPaid" xml:space="preserve">
+    <value>Mark as paid</value>
+  </data>
+  <data name="Action_MarkCollected" xml:space="preserve">
+    <value>Mark as collected</value>
+  </data>
+  <data name="Action_MarkPending" xml:space="preserve">
+    <value>Mark as pending</value>
+  </data>
+  <data name="Bulk_MarkPaid" xml:space="preserve">
+    <value>Mark them all as paid or collected</value>
+  </data>
+  <data name="Bulk_MarkPaidHint" xml:space="preserve">
+    <value>An old archive is usually settled. Untick it and every document shows first in Search, as pending.</value>
   </data>
   <data name="Filter_Year" xml:space="preserve">
     <value>Year</value>
@@ -240,11 +438,56 @@ Find it? It will be linked to this document again.</value>
 
 Choose another one with “Change…”.</value>
   </data>
+  <data name="FirstRun_HowToStart" xml:space="preserve">
+    <value>How do you want to start?</value>
+  </data>
+  <data name="FirstRun_NewArchive" xml:space="preserve">
+    <value>Start from scratch</value>
+  </data>
+  <data name="FirstRun_NewArchiveHint" xml:space="preserve">
+    <value>Ordena creates the invoices folder and fills it with what you import.</value>
+  </data>
+  <data name="FirstRun_ExistingArchive" xml:space="preserve">
+    <value>I already have an invoice archive</value>
+  </data>
+  <data name="FirstRun_ExistingArchiveHint" xml:space="preserve">
+    <value>The invoices folder from another PC, or from before Windows was reinstalled: Ordena gets its index back.</value>
+  </data>
+  <data name="FirstRun_ExistingFolderHint" xml:space="preserve">
+    <value>The folder that holds the years (2025, 2026…) and _backup.</value>
+  </data>
+  <data name="FirstRun_PickExistingTitle" xml:space="preserve">
+    <value>Choose your invoices folder</value>
+  </data>
+  <data name="FirstRun_FolderMissing" xml:space="preserve">
+    <value>That folder doesn't exist:
+{0}</value>
+  </data>
+  <data name="FirstRun_Restored" xml:space="preserve">
+    <value>Restored the backup from {0:d} at {0:t}: {1:N0} documents.</value>
+  </data>
+  <data name="FirstRun_AskRebuild" xml:space="preserve">
+    <value>There is no backup in that folder:
+{0}
+
+Rebuild the index from the folders and the file names? Ordena reads each PDF once.</value>
+  </data>
+  <data name="FirstRun_RebuildProgress" xml:space="preserve">
+    <value>Rebuilding the index…</value>
+  </data>
+  <data name="FirstRun_Rebuilt" xml:space="preserve">
+    <value>Index rebuilt: {0:N0} documents from {1:N0} suppliers and customers.</value>
+  </data>
+  <data name="FirstRun_RebuiltLeftOut" xml:space="preserve">
+    <value>{0:N0} PDFs aren't named the way Ordena names them: you'll find them in Settings → Check folder.</value>
+  </data>
   <data name="Startup_ArchiveUnavailable" xml:space="preserve">
     <value>The invoices folder isn't available:
 {0}
 
-Connect the disk and choose Yes to try again. With No you can still search, but not open or import files until it's back.</value>
+If it's on an external disk or a network drive, connect it and choose Try again. If you moved it, choose Find… and pick where it is now.
+
+With Continue you can search documents, but not open them or import until it's back.</value>
   </data>
   <data name="Dialog_Title" xml:space="preserve">
     <value>Ordena</value>
@@ -653,6 +896,9 @@ Save this one anyway?</value>
   </data>
   <data name="Bulk_ReportTitle" xml:space="preserve">
     <value>Import finished</value>
+  </data>
+  <data name="Bulk_ReportTitleCancelled" xml:space="preserve">
+    <value>Import cancelled</value>
   </data>
   <data name="Bulk_Report" xml:space="preserve">
     <value>Imported {0:N0} · Duplicates {1:N0} · Number already used {2:N0} · Failed {3:N0} · {4}</value>

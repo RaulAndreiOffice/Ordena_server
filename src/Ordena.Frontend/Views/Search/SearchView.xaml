@@ -18,6 +18,58 @@
         <converters:EnumToLocalizedConverter x:Key="Localized" />
         <converters:NullToVisibilityConverter x:Key="EmptyToVisibility" Invert="True" />
 
+        <!-- «Marcar como pagada», «… cobrada» for an issued one, or back to «… pendiente». -->
+        <Style x:Key="TogglePaidItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+            <Setter Property="Command" Value="{Binding PlacementTarget.Tag.TogglePaidCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <Setter Property="CommandParameter" Value="{Binding}" />
+            <Setter Property="Header" Value="{x:Static res:Strings.Action_MarkPaid}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Direction}" Value="{x:Static models:Direction.Emitida}">
+                    <Setter Property="Header" Value="{x:Static res:Strings.Action_MarkCollected}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPaid}" Value="True">
+                    <Setter Property="Header" Value="{x:Static res:Strings.Action_MarkPending}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- What a click on an orange «Pendiente» tag opens, right under it. -->
+        <ContextMenu x:Key="PayMenu" x:Shared="False">
+            <MenuItem Style="{StaticResource TogglePaidItem}" FontWeight="SemiBold">
+                <MenuItem.Icon>
+                    <controls:Icon Data="{StaticResource Icon.Linear.TickCircle}" Size="16" Foreground="{StaticResource Brush.Success}" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
+        <!-- The «Pendiente» tag as a button: the same orange pill, with a small arrow, outlined under the mouse. -->
+        <Style x:Key="PendingTag" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" CornerRadius="5" Padding="8,2" BorderThickness="1" BorderBrush="Transparent"
+                                Background="{StaticResource Brush.Warning100}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Static res:Strings.Payment_Pending}" FontSize="12" FontWeight="Medium"
+                                           Foreground="{StaticResource Brush.Warning}" />
+                                <Path Data="M0,0 L3.5,3.5 L7,0" Stroke="{StaticResource Brush.Warning}" StrokeThickness="1.5"
+                                      Width="8" Height="5" Stretch="Uniform" VerticalAlignment="Center" Margin="6,1,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brush.Warning}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- The row actions, from the "⋯" button or a right-click. The menu isn't in the visual tree:
              it reaches the page's ViewModel through its placement target's Tag. -->
         <ContextMenu x:Key="RowMenu" x:Shared="False">
@@ -30,6 +82,7 @@
             <MenuItem Header="{x:Static res:Strings.Action_Edit}" InputGestureText="F2"
                       Command="{Binding PlacementTarget.Tag.EditCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding}" />
+            <MenuItem Style="{StaticResource TogglePaidItem}" />
             <Separator />
             <MenuItem Header="{x:Static res:Strings.Action_Delete}" InputGestureText="Supr" Foreground="{StaticResource Brush.Error}"
                       Command="{Binding PlacementTarget.Tag.DeleteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -52,6 +105,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition />
@@ -99,8 +153,30 @@
             </Grid>
         </DockPanel>
 
+        <!-- Anything not paid or collected yet: how many, whatever the search, and a way to see only them.
+             Those rows also come first in the table. -->
+        <Border Grid.Row="2" Margin="0,0,0,12" CornerRadius="8" Padding="14,8" BorderThickness="1"
+                Background="{StaticResource Brush.Warning100}" BorderBrush="{StaticResource Brush.Warning}"
+                Visibility="{Binding ShowPendingBar, Converter={StaticResource BoolToVisibility}}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" FontSize="13" VerticalAlignment="Center"
+                           Visibility="{Binding IsPendingOnly, Converter={StaticResource InverseBoolToVisibility}}">
+                    <Hyperlink Command="{Binding ShowPendingOnlyCommand}" Foreground="{StaticResource Brush.Primary}"
+                               TextDecorations="None"><Run Text="{x:Static res:Strings.Search_ShowPending}" /></Hyperlink>
+                </TextBlock>
+                <TextBlock DockPanel.Dock="Right" FontSize="13" VerticalAlignment="Center"
+                           Visibility="{Binding IsPendingOnly, Converter={StaticResource BoolToVisibility}}">
+                    <Hyperlink Command="{Binding ShowAllCommand}" Foreground="{StaticResource Brush.Primary}"
+                               TextDecorations="None"><Run Text="{x:Static res:Strings.Search_ShowAll}" /></Hyperlink>
+                </TextBlock>
+                <controls:Icon Data="{StaticResource Icon.Linear.Danger}" Size="18" Foreground="{StaticResource Brush.Warning}"
+                               VerticalAlignment="Center" Margin="0,0,10,0" />
+                <TextBlock Text="{Binding PendingText}" Style="{StaticResource Text.BodyMedium}" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
         <!-- The table -->
-        <ContentControl Grid.Row="2" Style="{StaticResource Card}" Padding="0" Focusable="False">
+        <ContentControl Grid.Row="3" Style="{StaticResource Card}" Padding="0" Focusable="False">
             <Grid>
                 <DataGrid Style="{StaticResource DataGrid.List}" RowStyle="{StaticResource Row}" Margin="1"
                           ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedItem}"
@@ -112,7 +188,7 @@
                           behaviors:DataGridBehavior.SortBy="{Binding SortBy}"
                           behaviors:DataGridBehavior.SortDescending="{Binding SortDescending}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" SortMemberPath="IssueDate" Width="120"
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" SortMemberPath="IssueDate" Width="110"
                                             Binding="{Binding IssueDate, StringFormat=d}" />
                         <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" SortMemberPath="Partner" Width="2*"
                                             Binding="{Binding PartnerName}" />
@@ -120,7 +196,7 @@
                                             Binding="{Binding DocNumber}" />
                         <DataGridTextColumn Header="{x:Static res:Strings.Column_Type}" SortMemberPath="Type" Width="210"
                                             Binding="{Binding Type, Converter={StaticResource Localized}}" />
-                        <DataGridTemplateColumn Header="{x:Static res:Strings.Column_Direction}" SortMemberPath="Direction" Width="130">
+                        <DataGridTemplateColumn Header="{x:Static res:Strings.Column_Direction}" SortMemberPath="Direction" Width="110">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border x:Name="Pill" Style="{StaticResource Tag}" Background="{StaticResource Brush.PrimaryTransparent}">
@@ -131,6 +207,34 @@
                                         <DataTrigger Binding="{Binding Direction}" Value="{x:Static models:Direction.Emitida}">
                                             <Setter TargetName="Pill" Property="Background" Value="{StaticResource Brush.Success100}" />
                                             <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.Success}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!-- «Pagada», or «Cobrada» for an issued one. Pending: an orange «Pendiente» (those rows come
+                             first) that is a button: a click opens «Marcar como pagada» right under it. -->
+                        <DataGridTemplateColumn Header="{x:Static res:Strings.Column_Status}" Width="124" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Border x:Name="Pill" Style="{StaticResource Tag}" Background="{StaticResource Brush.Light}">
+                                            <TextBlock x:Name="Label" Text="{x:Static res:Strings.Payment_Paid}"
+                                                       FontSize="12" FontWeight="Medium" Foreground="{StaticResource Brush.TextSecondary}" />
+                                        </Border>
+                                        <Button x:Name="Pending" Style="{StaticResource PendingTag}" Visibility="Collapsed"
+                                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                ContextMenu="{StaticResource PayMenu}" behaviors:ContextMenuBehavior.OpenOnClick="True"
+                                                AutomationProperties.Name="{x:Static res:Strings.Payment_Pending}"
+                                                ToolTip="{x:Static res:Strings.Search_PendingTagHint}" />
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Direction}" Value="{x:Static models:Direction.Emitida}">
+                                            <Setter TargetName="Label" Property="Text" Value="{x:Static res:Strings.Payment_Collected}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPaid}" Value="False">
+                                            <Setter TargetName="Pill" Property="Visibility" Value="Collapsed" />
+                                            <Setter TargetName="Pending" Property="Visibility" Value="Visible" />
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
@@ -173,7 +277,7 @@
         </ContentControl>
 
         <!-- The count, and "Limpiar filtros" while anything is typed or filtered. -->
-        <DockPanel Grid.Row="3" Margin="2,12,0,0">
+        <DockPanel Grid.Row="4" Margin="2,12,0,0">
             <TextBlock DockPanel.Dock="Right" FontSize="13"
                        Visibility="{Binding HasCriteria, Converter={StaticResource BoolToVisibility}}">
                 <Hyperlink Command="{Binding ClearFiltersCommand}" Foreground="{StaticResource Brush.Primary}"

@@ -155,6 +155,24 @@ public sealed class ImportViewModelTests : IDisposable
         Assert.Equal("Archivado como 2026/1T/Recibidas/Iberdrola/a.pdf", _vm.Queue[0].Message);
     }
 
+    // The files «Importar carpeta» couldn't read come from an old archive it marked paid: so do their forms.
+    // Dropped files are new, so pending; and each file starts afresh, whatever the one before was.
+    [Fact]
+    public async Task Each_file_starts_pending_unless_it_comes_from_an_archive_marked_paid()
+    {
+        _messenger.Send(new FilesDroppedMessage([A], KeepSource: true, StartsPaid: true));
+        await _vm.PendingEnqueue;
+        Assert.True(_vm.Form.IsPaid);
+
+        await _vm.EnqueueAsync([B]);
+        Fill();
+        await _vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.True(Assert.Single(_import.Requests).IsPaid);
+        Assert.Equal(B, _vm.CurrentItem?.Path);
+        Assert.False(_vm.Form.IsPaid);
+    }
+
     [Fact]
     public async Task An_incomplete_form_is_not_sent()
     {

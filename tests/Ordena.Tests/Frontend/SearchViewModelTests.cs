@@ -293,6 +293,92 @@ public sealed class SearchViewModelTests : IDisposable
         Assert.Equal(2, _vm.SelectedItem?.Id);
     }
 
+    // Anything not paid or collected yet: how many, above the grid, whatever is searched.
+    [Fact]
+    public async Task Pending_documents_are_counted_above_the_grid()
+    {
+        _search.PendingTotal = 3;
+        await _vm.OnNavigatedToAsync();
+        Assert.True(_vm.ShowPendingBar);
+        Assert.Equal("3 pendientes de pago o cobro", _vm.PendingText);
+
+        _search.PendingTotal = 1;
+        _vm.Text = "repsol";
+        await _vm.PendingSearch;
+        Assert.Equal("1 pendiente de pago o cobro", _vm.PendingText);
+
+        _search.PendingTotal = 0;
+        _vm.Text = "";
+        await _vm.PendingSearch;
+        Assert.False(_vm.ShowPendingBar);
+    }
+
+    // «Ver solo pendientes» shows every one of them, so nothing typed or filtered may hide one.
+    [Fact]
+    public async Task Show_pending_only_clears_the_search_and_asks_for_just_those()
+    {
+        _search.PendingTotal = 2;
+        await _vm.OnNavigatedToAsync();
+        _vm.Text = "telef";
+        await _vm.PendingSearch;
+        _vm.SelectedType = _vm.Types[1];
+        await _vm.PendingSearch;
+        _search.Queries.Clear();
+
+        await _vm.ShowPendingOnlyCommand.ExecuteAsync(null);
+
+        Assert.Equal(new SearchQuery { Text = "", PendingOnly = true }, Assert.Single(_search.Queries));
+        Assert.True(_vm.IsPendingOnly);
+        Assert.True(_vm.HasCriteria);
+
+        _vm.ShowAllCommand.Execute(null);
+        await _vm.PendingSearch;
+
+        Assert.False(_vm.IsPendingOnly);
+        Assert.Equal(2, _search.Queries.Count);
+        Assert.False(_search.Queries[^1].PendingOnly);
+    }
+
+    [Fact]
+    public async Task Clearing_the_filters_also_shows_all_again()
+    {
+        await _vm.OnNavigatedToAsync();
+        await _vm.ShowPendingOnlyCommand.ExecuteAsync(null);
+
+        await _vm.ClearFiltersCommand.ExecuteAsync(null);
+
+        Assert.False(_vm.IsPendingOnly);
+        Assert.False(_search.Queries[^1].PendingOnly);
+    }
+
+    // «Marcar como pagada» on a pending row, «Marcar como pendiente» on a paid one; the grid then reloads,
+    // which moves the row.
+    [Fact]
+    public async Task Marking_paid_or_pending_flips_the_status_and_refreshes()
+    {
+        await _vm.OnNavigatedToAsync();
+
+        await _vm.TogglePaidCommand.ExecuteAsync(Telefonica with { IsPaid = false });
+        await _vm.TogglePaidCommand.ExecuteAsync(Repsol);
+        await _vm.PendingSearch;
+
+        Assert.Equal([(1, true), (2, false)], _documents.PaidChanges);
+        Assert.Equal([new DocumentsChangedMessage(DocumentsChange.Edited, 1), new DocumentsChangedMessage(DocumentsChange.Edited, 2)], _changes);
+        Assert.Equal(3, _search.Queries.Count);
+    }
+
+    [Fact]
+    public async Task A_status_change_that_fails_says_why()
+    {
+        await _vm.OnNavigatedToAsync();
+        _documents.SetPaidResult = Result.Fail(ErrorCode.IoError, "disk");
+
+        await _vm.TogglePaidCommand.ExecuteAsync(Telefonica);
+
+        Assert.Equal(["No se pudo leer o escribir el archivo."], _dialogs.Errors);
+        Assert.Empty(_changes);
+    }
+
     [Fact]
     public async Task Nothing_is_searched_before_the_page_is_first_shown()
     {

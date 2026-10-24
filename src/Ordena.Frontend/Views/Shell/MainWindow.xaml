@@ -83,7 +83,7 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
                         <TextBlock Text="{Binding VersionText}" Style="{StaticResource Text.Small}" />
-                        <TextBlock Text=" · (made by mind2code)" ToolTip="(maide by mind2code)"
+                        <TextBlock Text=" · (made by mind2code.dev)" ToolTip="(made by mind2code.dev)"
                                    Style="{StaticResource Text.Small}" Foreground="{StaticResource Brush.TextSecondary}"
                                    Margin="4,0,0,0" />
                     </StackPanel>
@@ -92,7 +92,51 @@
                 </DockPanel>
             </Border>
 
-            <ContentControl Content="{Binding CurrentPage}" Margin="24" Focusable="False" />
+            <!-- The archive folder is missing: search still works, so the other pages stay, under a banner. -->
+            <Border DockPanel.Dock="Top" Margin="24,20,24,0" CornerRadius="8" Padding="16,10" BorderThickness="1"
+                    Background="{StaticResource Brush.Warning100}" BorderBrush="{StaticResource Brush.Warning}"
+                    Visibility="{Binding ShowArchiveBanner, Converter={StaticResource BoolToVisibility}}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Archive_Retry}"
+                                Command="{Binding RetryArchiveCommand}" Margin="0,0,8,0" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Archive_Locate}"
+                                Command="{Binding LocateArchiveCommand}" />
+                    </StackPanel>
+                    <controls:Icon Data="{StaticResource Icon.Linear.Danger}" Size="20" Foreground="{StaticResource Brush.Warning}"
+                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ArchiveUnavailableText}" Style="{StaticResource Text.BodyMedium}"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding ArchiveUnavailableText}" />
+                        <TextBlock Text="{x:Static res:Strings.Archive_UnavailableHint}" Style="{StaticResource Text.Small}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Grid>
+                <ContentControl Content="{Binding CurrentPage}" Margin="24" Focusable="False"
+                                Visibility="{Binding ShowArchivePanel, Converter={StaticResource InverseBoolToVisibility}}" />
+
+                <!-- Instead of the import pages while the folder is missing. -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560" Margin="24"
+                            Visibility="{Binding ShowArchivePanel, Converter={StaticResource BoolToVisibility}}">
+                    <Border Width="64" Height="64" CornerRadius="32" HorizontalAlignment="Center"
+                            Background="{StaticResource Brush.Warning100}">
+                        <controls:Icon Data="{StaticResource Icon.Linear.Danger}" Size="30" Foreground="{StaticResource Brush.Warning}" />
+                    </Border>
+                    <TextBlock Text="{Binding ArchiveUnavailableText}" Style="{StaticResource Text.Heading}" TextWrapping="Wrap"
+                               TextAlignment="Center" Margin="0,16,0,0" />
+                    <TextBlock Text="{x:Static res:Strings.Archive_PanelHint}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"
+                               TextAlignment="Center" Margin="0,8,0,0" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <Button Style="{StaticResource Button.Primary}" Content="{x:Static res:Strings.Archive_Retry}"
+                                Command="{Binding RetryArchiveCommand}" Margin="0,0,8,0" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="{x:Static res:Strings.Archive_Locate}"
+                                Command="{Binding LocateArchiveCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
         </DockPanel>
 
         <!-- While PDFs are dragged over the window. Not over the PDF preview: that is a separate native

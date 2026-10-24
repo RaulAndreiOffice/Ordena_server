@@ -84,6 +84,7 @@ internal sealed class ImportService(
             IssueDate = request.IssueDate,
             Type = request.Type,
             Direction = request.Direction,
+            IsPaid = request.IsPaid,
             OriginalName = Path.GetFileName(request.SourcePath),
             FileSizeBytes = content.Length,
             ImportedAt = now,

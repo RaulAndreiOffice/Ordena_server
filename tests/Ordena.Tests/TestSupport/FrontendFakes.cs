@@ -1,4 +1,5 @@
 using System.Text;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Ordena.Backend.Dtos;
 using Ordena.Backend.Models;
 using Ordena.Backend.Results;
@@ -13,6 +14,7 @@ internal sealed class FakeSettingsService : ISettingsService
 {
     public string Language { get; set; } = UserSettings.Spanish;
     public string? ArchiveRoot { get; set; }
+    public DateTime? LastBackupUtc { get; set; }
     public string Suggestion { get; set; } = @"C:\Users\Ana\Documents\Facturas";
 
     // What SetArchiveRootAsync answers; Ok saves the folder.
@@ -21,7 +23,7 @@ internal sealed class FakeSettingsService : ISettingsService
     public List<string> Saved { get; } = [];
 
     public Task<UserSettings> GetAsync(CancellationToken ct) =>
-        Task.FromResult(new UserSettings(ArchiveRoot, Language, null));
+        Task.FromResult(new UserSettings(ArchiveRoot, Language, LastBackupUtc));
 
     public Task<Result> SetArchiveRootAsync(string path, CancellationToken ct)
     {
@@ -47,11 +49,13 @@ internal sealed class FakeFilePicker : IFilePickerService
 {
     public string? Choice { get; set; }
     public string? OpenedAt { get; private set; }
+    public string? Title { get; private set; }
     public IReadOnlyList<string> Files { get; set; } = [];
     public string? PdfChoice { get; set; }
 
     public string? PickFolder(string title, string? initialFolder)
     {
+        Title = title;
         OpenedAt = initialFolder;
         return Choice;
     }
@@ -65,15 +69,38 @@ internal sealed class FakeFilePicker : IFilePickerService
     }
 }
 
-// Records every message instead of showing it; ConfirmAsync answers Confirm, and the edit dialog
-// "saves" when EditSaves.
+// Records every message instead of showing it, its line breaks as they are typed in the code, whatever
+// the resx file's line endings on this checkout. ConfirmAsync answers Confirm (or the next of Confirms),
+// ChooseAsync the next of Choices (-1, closed, when none is left), and the edit dialog "saves" when
+// EditSaves. A job with a progress window runs at once, reporting into ProgressReports, with a token
+// that CancelProgress cancels: as if Cancelar was pressed.
 internal sealed class FakeDialogs : IDialogService
 {
     public List<string> Errors { get; } = [];
+    public List<string> Infos { get; } = [];
     public List<string> Questions { get; } = [];
     public List<int> EditedIds { get; } = [];
     public bool Confirm { get; set; } = true;
+    public Queue<bool> Confirms { get; } = [];
     public bool EditSaves { get; set; } = true;
+    public Queue<int> Choices { get; } = [];
+    public List<string[]> ChoicesOffered { get; } = [];
+    public List<string> ProgressTitles { get; } = [];
+    public List<ArchiveProgress> ProgressReports { get; } = [];
+    public CancellationTokenSource CancelProgress { get; } = new();
+
+    public Task<int> ChooseAsync(string message, params string[] choices)
+    {
+        Questions.Add(message.ReplaceLineEndings("\n"));
+        ChoicesOffered.Add(choices);
+        return Task.FromResult(Choices.TryDequeue(out var choice) ? choice : -1);
+    }
+
+    public Task<T> RunWithProgressAsync<T>(string title, Func<IProgress<ArchiveProgress>, CancellationToken, Task<T>> work)
+    {
+        ProgressTitles.Add(title);
+        return work(new SyncProgress<ArchiveProgress>(ProgressReports.Add), CancelProgress.Token);
+    }
 
     public Task<bool> ShowEditDocumentAsync(int documentId)
     {
@@ -83,16 +110,20 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task ShowErrorAsync(string message)
     {
-        Errors.Add(message);
+        Errors.Add(message.ReplaceLineEndings("\n"));
         return Task.CompletedTask;
     }
 
-    public Task ShowInfoAsync(string message) => Task.CompletedTask;
+    public Task ShowInfoAsync(string message)
+    {
+        Infos.Add(message.ReplaceLineEndings("\n"));
+        return Task.CompletedTask;
+    }
 
     public Task<bool> ConfirmAsync(string message)
     {
-        Questions.Add(message);
-        return Task.FromResult(Confirm);
+        Questions.Add(message.ReplaceLineEndings("\n"));
+        return Task.FromResult(Confirms.TryDequeue(out var answer) ? answer : Confirm);
     }
 }
 
@@ -149,6 +180,7 @@ internal sealed class FakeSearchService : ISearchService
     public List<SearchQuery> Queries { get; } = [];
     public IReadOnlyList<DocumentListItem> Items { get; set; } = [];
     public int? TotalCount { get; set; }
+    public int PendingTotal { get; set; }
     public IReadOnlyList<int> Years { get; set; } = [];
     public int YearLoads { get; private set; }
     public bool Hold { get; set; }
@@ -158,7 +190,7 @@ internal sealed class FakeSearchService : ISearchService
     {
         Queries.Add(query);
         if (!Hold)
-            return Task.FromResult(new SearchResult(Items, TotalCount ?? Items.Count));
+            return Task.FromResult(new SearchResult(Items, TotalCount ?? Items.Count, PendingTotal));
 
         var answer = new TaskCompletionSource<SearchResult>();
         Held.Add(answer);
@@ -217,6 +249,8 @@ internal sealed class FakeDocumentService : IDocumentService
     public List<int> Deleted { get; } = [];
     public List<int> Restored { get; } = [];
     public List<(int Id, string Path)> Relinked { get; } = [];
+    public List<(int Id, bool IsPaid)> PaidChanges { get; } = [];
+    public Result SetPaidResult { get; set; } = Result.Ok();
 
     public Func<EditDocumentRequest, Result<DocumentListItem>> EditAnswer { get; set; } = request =>
         Result.Ok(new DocumentListItem(request.Id, request.IssueDate, request.PartnerName, request.DocNumber,
@@ -236,6 +270,12 @@ internal sealed class FakeDocumentService : IDocumentService
     {
         Edits.Add(request);
         return Task.FromResult(EditAnswer(request));
+    }
+
+    public Task<Result> SetPaidAsync(int id, bool isPaid, CancellationToken ct)
+    {
+        PaidChanges.Add((id, isPaid));
+        return Task.FromResult(SetPaidResult);
     }
 
     public Task<Result> DeleteAsync(int id, CancellationToken ct)
@@ -284,18 +324,180 @@ internal sealed class FakePartnerService(params string[] names) : IPartnerServic
         .ToArray());
 }
 
+// Answers with AnalyzeAnswer and RunAnswer, recording every analysis. RunAsyncAnswer, when set, replaces
+// RunAnswer for a run that reports progress or waits to be cancelled.
 internal sealed class FakeBulkImportService : IBulkImportService
 {
+    public List<BulkImportOptions> Analyzed { get; } = [];
+
     public Func<BulkImportOptions, Result<BulkImportPreview>> AnalyzeAnswer { get; set; } = _ =>
         Result.Ok(new BulkImportPreview("", null, [], [], [], []));
 
     public Func<BulkImportRun, BulkImportReport> RunAnswer { get; set; } = _ =>
         new BulkImportReport(0, [], [], [], false, TimeSpan.Zero);
 
-    public Task<Result<BulkImportPreview>> AnalyzeAsync(BulkImportOptions options, CancellationToken ct) =>
-        Task.FromResult(AnalyzeAnswer(options));
+    public Func<BulkImportRun, IProgress<BulkImportProgress>?, CancellationToken, Task<BulkImportReport>>? RunAsyncAnswer { get; set; }
+
+    public Task<Result<BulkImportPreview>> AnalyzeAsync(BulkImportOptions options, CancellationToken ct)
+    {
+        Analyzed.Add(options);
+        return Task.FromResult(AnalyzeAnswer(options));
+    }
 
     public Task<BulkImportReport> RunAsync(BulkImportRun run, IProgress<BulkImportProgress>? progress, CancellationToken ct) =>
-        Task.FromResult(RunAnswer(run));
+        RunAsyncAnswer?.Invoke(run, progress, ct) ?? Task.FromResult(RunAnswer(run));
+}
+
+// The archive's state, set by the test. A refresh finds AvailableOnRefresh (when set); "Buscar…" finds
+// LocateAnswer (null: the user cancels).
+internal sealed class FakeArchiveState : ObservableObject, IArchiveState
+{
+    private string? _root;
+    private bool _isAvailable = true;
+    private bool _isImporting;
+
+    public string? Root
+    {
+        get => _root;
+        set => SetProperty(ref _root, value);
+    }
+
+    public bool IsAvailable
+    {
+        get => _isAvailable;
+        set => SetProperty(ref _isAvailable, value);
+    }
+
+    public bool IsImporting
+    {
+        get => _isImporting;
+        set => SetProperty(ref _isImporting, value);
+    }
+
+    public bool? AvailableOnRefresh { get; set; }
+    public string? LocateAnswer { get; set; }
+    public int Refreshes { get; private set; }
+    public int Locates { get; private set; }
+
+    public Task RefreshAsync()
+    {
+        Refreshes++;
+        if (AvailableOnRefresh is { } available)
+            IsAvailable = available;
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> LocateAsync()
+    {
+        Locates++;
+        if (LocateAnswer is null)
+            return Task.FromResult(false);
+        SetRoot(LocateAnswer);
+        return Task.FromResult(true);
+    }
+
+    public void SetRoot(string newRoot)
+    {
+        Root = newRoot;
+        IsAvailable = true;
+    }
+}
+
+// The archive's upkeep: Status, and the answers each method gives; every call is recorded in Calls.
+internal sealed class FakeMaintenanceService : IMaintenanceService
+{
+    public ArchiveStatus Status { get; set; } = ArchiveStatus.Available;
+    public Result BackupResult { get; set; } = Result.Ok();
+    public Func<CancellationToken, Result<ArchiveCheckReport>> CheckAnswer { get; set; } = _ =>
+        Result.Ok(new ArchiveCheckReport(0, [], [], []));
+    public Func<IReadOnlyList<string>, Result<RegisterReport>> RegisterAnswer { get; set; } = paths =>
+        Result.Ok(new RegisterReport(paths.Count, []));
+    public List<string> Calls { get; } = [];
+
+    // Run by BackupNowAsync when it succeeds: the time it records, as the real one does.
+    public Action? OnBackup { get; set; }
+
+    public Task RunStartupAsync(CancellationToken ct) => Task.CompletedTask;
+
+    public Task<ArchiveStatus> GetArchiveStatusAsync(CancellationToken ct)
+    {
+        Calls.Add("status");
+        return Task.FromResult(Status);
+    }
+
+    public Task<Result<int>> RecoverInterruptedMovesAsync(CancellationToken ct)
+    {
+        Calls.Add("recover");
+        return Task.FromResult(Result.Ok(0));
+    }
+
+    public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;
+
+    public Task<Result> BackupNowAsync(CancellationToken ct)
+    {
+        Calls.Add("backup");
+        if (BackupResult.IsSuccess)
+            OnBackup?.Invoke();
+        return Task.FromResult(BackupResult);
+    }
+
+    public Task<Result> BackupIfChangedAsync(CancellationToken ct) => Task.FromResult(Result.Ok());
+
+    public Task<Result<ArchiveCheckReport>> CheckArchiveAsync(CancellationToken ct)
+    {
+        Calls.Add("check");
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(CheckAnswer(ct));
+    }
+
+    public Task<Result<RegisterReport>> RegisterFilesAsync(IReadOnlyList<string> paths, CancellationToken ct)
+    {
+        Calls.Add($"register {paths.Count}");
+        return Task.FromResult(RegisterAnswer(paths));
+    }
+}
+
+// Where the archive is and where its index comes from, answered by the test; every call is recorded in Calls.
+internal sealed class FakeArchiveService : IArchiveService
+{
+    public Func<string, Result> ChangeRootAnswer { get; set; } = _ => Result.Ok();
+    public Func<string, IProgress<ArchiveProgress>?, CancellationToken, Result<ArchiveMoveReport>> MoveAnswer { get; set; } =
+        (newRoot, _, _) => Result.Ok(new ArchiveMoveReport(@"D:\Facturas", newRoot, 3, 3_000));
+    public Result<int> DeleteOldCopyResult { get; set; } = Result.Ok(0);
+    public Func<string, Result<RestoreReport>> RestoreAnswer { get; set; } = _ => Result.Fail<RestoreReport>(ErrorCode.NoBackup);
+    public Func<string, IProgress<ArchiveProgress>?, CancellationToken, Result<RebuildReport>> RebuildAnswer { get; set; } =
+        (_, _, _) => Result.Ok(new RebuildReport(0, 0, [], []));
+    public List<string> Calls { get; } = [];
+
+    public Task<Result> ChangeRootAsync(string newRoot, CancellationToken ct)
+    {
+        Calls.Add($"change {newRoot}");
+        return Task.FromResult(ChangeRootAnswer(newRoot));
+    }
+
+    public Task<Result<ArchiveMoveReport>> MoveAsync(string newRoot, IProgress<ArchiveProgress>? progress, CancellationToken ct)
+    {
+        Calls.Add($"move {newRoot}");
+        return Task.FromResult(MoveAnswer(newRoot, progress, ct));
+    }
+
+    public Task<Result<int>> DeleteOldCopyAsync(string oldRoot, CancellationToken ct)
+    {
+        Calls.Add($"delete {oldRoot}");
+        return Task.FromResult(DeleteOldCopyResult);
+    }
+
+    public Task<Result<RestoreReport>> RestoreFromBackupAsync(string archiveRoot, CancellationToken ct)
+    {
+        Calls.Add($"restore {archiveRoot}");
+        return Task.FromResult(RestoreAnswer(archiveRoot));
+    }
+
+    public Task<Result<RebuildReport>> RebuildIndexAsync(
+        string archiveRoot, IProgress<ArchiveProgress>? progress, CancellationToken ct)
+    {
+        Calls.Add($"rebuild {archiveRoot}");
+        return Task.FromResult(RebuildAnswer(archiveRoot, progress, ct));
+    }
 }
 

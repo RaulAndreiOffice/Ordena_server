@@ -122,6 +122,34 @@ public sealed class MaintenanceServiceTests : IDisposable
         Assert.Equal(_clock.UtcNow, settings.LastBackupUtc);
     }
 
+    // Another program (antivirus, OneDrive) holding the new file for a moment doesn't make the backup fail.
+    [Fact]
+    public async Task A_backup_waits_for_a_file_held_for_a_moment()
+    {
+        await using var provider = await StartAsync();
+        await ImportAsync(provider);
+        var held = _archive.Path("_backup", BackupName(_clock.UtcNow) + ".tmp");
+        Directory.CreateDirectory(Path.GetDirectoryName(held)!);
+        var holder = new SqliteConnection($"Data Source={held};Pooling=False");
+        holder.Open();
+        using (var lockIt = holder.CreateCommand())
+        {
+            lockIt.CommandText = "CREATE TABLE t (x); BEGIN EXCLUSIVE; INSERT INTO t VALUES (1);";
+            lockIt.ExecuteNonQuery();
+        }
+        var release = Task.Run(async () =>
+        {
+            await Task.Delay(250, Ct);
+            holder.Dispose();
+        }, Ct);
+
+        var result = await provider.GetRequiredService<IMaintenanceService>().BackupNowAsync(Ct);
+        await release;
+
+        Assert.True(result.IsSuccess, $"{result.Error}: {result.Detail}");
+        Assert.Equal(1L, CountDocumentsIn(_archive.Path("_backup", BackupName(_clock.UtcNow))));
+    }
+
     [Fact]
     public async Task Only_the_newest_10_backups_are_kept()
     {
@@ -152,7 +180,8 @@ public sealed class MaintenanceServiceTests : IDisposable
 
         var id = await ImportAsync(provider);
         _clock.UtcNow = _clock.UtcNow.AddMinutes(1);
-        await maintenance.BackupIfChangedAsync(Ct);
+        var backedUp = await maintenance.BackupIfChangedAsync(Ct);
+        Assert.True(backedUp.IsSuccess, $"{backedUp.Error}: {backedUp.Detail}");
         var afterImport = _clock.UtcNow;
         Assert.Equal(afterImport, (await settings.GetAsync(Ct)).LastBackupUtc);
 
@@ -247,6 +276,7 @@ public sealed class MaintenanceServiceTests : IDisposable
         IssueDate = new DateOnly(2026, 4, 1),
         Type = DocType.Factura,
         Direction = Direction.Recibida,
+        IsPaid = false,
     };
 
     // Named in local time, like the clock on the wall.

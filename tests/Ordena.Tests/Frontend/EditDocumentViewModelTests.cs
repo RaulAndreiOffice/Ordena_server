@@ -88,9 +88,22 @@ public sealed class EditDocumentViewModelTests : IDisposable
             IssueDate = new DateOnly(2026, 4, 2),
             Type = DocType.Recibo,
             Direction = Direction.Recibida,
+            IsPaid = true, // as loaded
         }, request);
         Assert.Equal([new DocumentsChangedMessage(DocumentsChange.Edited, 5)], _changes);
         Assert.Equal(1, _completed);
+    }
+
+    [Fact]
+    public async Task Unticking_paid_saves_it_as_pending()
+    {
+        await _vm.LoadAsync(5);
+        Assert.True(_vm.Form.IsPaid);
+
+        _vm.Form.IsPaid = false;
+        await _vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.False(Assert.Single(_documents.Edits).IsPaid);
     }
 
     [Fact]

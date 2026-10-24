@@ -14,8 +14,8 @@ public sealed record TypeOption(DocType Type, string Label)
     public override string ToString() => Label;
 }
 
-// The fields of one document: partner (with suggestions), number, date, type, Recibida/Emitida.
-// Shared by the import screen and, later, the edit dialog.
+// The fields of one document: partner (with suggestions), number, date, type, Recibida/Emitida, and
+// whether it is paid (collected, for an issued one). Shared by the import screen and the edit dialog.
 public sealed partial class DocumentFormViewModel : ObservableValidator
 {
     private readonly IPartnerService _partners;
@@ -23,8 +23,12 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
     private CancellationTokenSource? _partnerLookup;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsIssued), nameof(PartnerLabel))]
+    [NotifyPropertyChangedFor(nameof(IsIssued), nameof(PartnerLabel), nameof(PaidLabel))]
     private bool _isReceived = true;
+
+    // Unticked, the document is pending, and Buscar lists it first.
+    [ObservableProperty]
+    private bool _isPaid;
 
     [ObservableProperty]
     [NotifyDataErrorInfo]
@@ -80,6 +84,9 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
     // The partner of a received document is its supplier; of an issued one, its customer.
     public string PartnerLabel => _localizer.Get(IsReceived ? "Form_Supplier" : "Form_Customer");
 
+    // A received document is paid; an issued one is collected.
+    public string PaidLabel => _localizer.Get(IsReceived ? "Payment_Paid" : "Payment_Collected");
+
     // Shows every missing field; true when the form can be saved.
     public bool Validate()
     {
@@ -95,6 +102,7 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
         IssueDate = DateOnly.FromDateTime(IssueDate ?? throw new InvalidOperationException("Validate the form first.")),
         Type = SelectedType.Type,
         Direction = IsReceived ? Direction.Recibida : Direction.Emitida,
+        IsPaid = IsPaid,
         ConfirmDuplicate = confirmDuplicate,
         KeepSource = keepSource,
     };
@@ -107,6 +115,7 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
         DocNumber = document.DocNumber;
         IssueDate = document.IssueDate.ToDateTime(TimeOnly.MinValue);
         SelectedType = Types.Single(t => t.Type == document.Type);
+        IsPaid = document.IsPaid;
         ClearErrors();
     }
 
@@ -118,16 +127,19 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
         IssueDate = DateOnly.FromDateTime(IssueDate ?? throw new InvalidOperationException("Validate the form first.")),
         Type = SelectedType.Type,
         Direction = IsReceived ? Direction.Recibida : Direction.Emitida,
+        IsPaid = IsPaid,
         ConfirmDuplicate = confirmDuplicate,
     };
 
-    // Ready for the next file. Type and Recibida/Emitida stay: consecutive files are usually alike.
+    // Ready for the next file. Type and Recibida/Emitida stay: consecutive files are usually alike. Paid
+    // doesn't: a new document is pending until the user says otherwise, so none is forgotten.
     public void Reset()
     {
         _partnerLookup?.Cancel();
         PartnerName = "";
         DocNumber = "";
         IssueDate = null;
+        IsPaid = false;
         Suggestions = [];
         SimilarHint = null;
         ClearErrors();
