@@ -31,7 +31,8 @@ public interface IArchiveService
     Task<Result<RestoreReport>> RestoreFromBackupAsync(string archiveRoot, CancellationToken ct);
 
     // "Reconstruir índice", when there is no backup: indexes every PDF whose path follows the app's
-    // naming, reading each file once for its SHA-256, and uses archiveRoot from now on. The database
+    // naming, reading each file once for its SHA-256, and uses archiveRoot from now on, unless it found
+    // none (DocumentCount 0: not the invoices folder, so the setting stays as it was). The database
     // must be empty (InvalidOperationException otherwise). ArchiveUnavailable when the folder is missing.
     // A cancel during the reading leaves the database empty.
     Task<Result<RebuildReport>> RebuildIndexAsync(

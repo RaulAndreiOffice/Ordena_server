@@ -169,6 +169,9 @@ Solo se borran los archivos que tienen una copia idéntica en la nueva.</value>
     <value>Añadidos a Ordena: {0:N0}.
 Para la importación manual: {1:N0}.</value>
   </data>
+  <data name="Settings_RegisteredInTrash" xml:space="preserve">
+    <value>Se quedan en la papelera, sin importar: {0:N0}.</value>
+  </data>
   <data name="Archive_Unavailable" xml:space="preserve">
     <value>La carpeta de facturas no está disponible: {0}</value>
   </data>
@@ -474,6 +477,12 @@ Elige otra con «Cambiar…».</value>
   </data>
   <data name="FirstRun_RebuildProgress" xml:space="preserve">
     <value>Reconstruyendo el índice…</value>
+  </data>
+  <data name="FirstRun_NothingRebuilt" xml:space="preserve">
+    <value>No se ha encontrado ninguna factura con los nombres de Ordena en esa carpeta:
+{0}
+
+Elige la carpeta de facturas: la que contiene los años (2025, 2026…).</value>
   </data>
   <data name="FirstRun_Rebuilt" xml:space="preserve">
     <value>Índice reconstruido: {0:N0} documentos de {1:N0} proveedores y clientes.</value>

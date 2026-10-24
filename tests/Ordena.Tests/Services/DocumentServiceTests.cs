@@ -377,6 +377,34 @@ public sealed class DocumentServiceTests : IDisposable
         Assert.False((await _documents.GetAsync(id, Ct)).IsPaid);
     }
 
+    // From the edit dialog with the archive's disk unplugged: a change that keeps the file name (the paid
+    // status) is saved; one that would move the file isn't, and a new partner it named isn't left behind.
+    [Fact]
+    public async Task Without_the_archive_only_an_edit_that_keeps_the_file_name_is_saved()
+    {
+        var id = await ImportAsync("a");
+        var unplugged = _archive.Root + "-unplugged";
+        Directory.Move(_archive.Root, unplugged);
+        Result<DocumentListItem> paid, redated, newPartner;
+        try
+        {
+            paid = await _documents.EditAsync(Edit(id, isPaid: true), Ct);
+            redated = await _documents.EditAsync(Edit(id, date: "2026-04-02", isPaid: true), Ct);
+            newPartner = await _documents.EditAsync(Edit(id, partner: "Nuevo S.L.", isPaid: true), Ct);
+        }
+        finally
+        {
+            Directory.Move(unplugged, _archive.Root);
+        }
+
+        Assert.True(paid.IsSuccess);
+        Assert.Equal((ErrorCode.ArchiveUnavailable, ErrorCode.ArchiveUnavailable), (redated.Error, newPartner.Error));
+        var details = await _documents.GetAsync(id, Ct);
+        Assert.Equal((true, new DateOnly(2026, 3, 14), Telefonica), (details.IsPaid, details.IssueDate, details.PartnerName));
+        Assert.Equal(1L, _db.Scalar("SELECT COUNT(*) FROM Partners"));
+        Assert.Equal([TelefonicaPath], _archive.Files());
+    }
+
     [Fact]
     public async Task An_edit_that_only_marks_it_paid_moves_nothing()
     {

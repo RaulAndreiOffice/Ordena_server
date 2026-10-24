@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Data.Sqlite;
+using Ordena.Backend.Files;
 
 namespace Ordena.Backend.Infrastructure;
 
@@ -14,10 +15,11 @@ internal sealed class SqliteBackup(IAppPaths paths)
 
     public const int Keep = 10;
 
-    // Antivirus, the search indexer or a sync tool (OneDrive) may hold the new file for a moment, and
-    // SQLite's backup doesn't wait for a lock: it reports the database as busy. Each try copies again.
-    private const int BusyAttempts = 6;
-    private static readonly TimeSpan BusyDelay = TimeSpan.FromMilliseconds(100);
+    // Antivirus, the search indexer or a sync tool (OneDrive) may hold a file for a moment: the new copy, or
+    // one already under its final name. Neither SQLite's backup nor the rename waits for that, so both are
+    // tried again, each time a little later.
+    private const int HeldAttempts = 6;
+    private static readonly TimeSpan HeldDelay = TimeSpan.FromMilliseconds(100);
 
     private const string NameFormat = "yyyyMMdd-HHmm";
 
@@ -29,21 +31,10 @@ internal sealed class SqliteBackup(IAppPaths paths)
         var path = Path.Combine(folder, $"ordena-{localTime.ToString(NameFormat, CultureInfo.InvariantCulture)}.db");
         var tmpPath = path + ".tmp";
 
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
-                CopyTo(tmpPath);
-                break;
-            }
-            catch (SqliteException ex) when (ex.SqliteErrorCode is SqliteBusy or SqliteLocked && attempt < BusyAttempts)
-            {
-                Thread.Sleep(BusyDelay * attempt);
-            }
-        }
+        WhileHeld(() => CopyTo(tmpPath));
 
         // A half-written backup never has the final name, so a restore can't pick it up.
-        File.Move(tmpPath, path, overwrite: true);
+        WhileHeld(() => File.Move(tmpPath, path, overwrite: true));
 
         // The names sort by date, oldest first.
         var backups = Directory.GetFiles(folder, "ordena-*.db").Order(StringComparer.Ordinal).ToList();
@@ -121,8 +112,35 @@ internal sealed class SqliteBackup(IAppPaths paths)
         }
     }
 
+    private static void WhileHeld(Action action)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (Exception ex) when (IsHeld(ex) && attempt < HeldAttempts)
+            {
+                Thread.Sleep(HeldDelay * attempt);
+            }
+        }
+    }
+
+    // SQLite says busy, locked or can't open; Windows says the file is in use, or, for a rename over a file
+    // another program has open, that access is denied.
+    private static bool IsHeld(Exception ex) => ex switch
+    {
+        SqliteException sqlite => sqlite.SqliteErrorCode is SqliteBusy or SqliteLocked or SqliteCantOpen,
+        IOException io => FileStorage.IsLocked(io),
+        UnauthorizedAccessException => true,
+        _ => false,
+    };
+
     private const int SqliteBusy = 5;
     private const int SqliteLocked = 6;
+    private const int SqliteCantOpen = 14;
 
     // Without pooling, so the files are closed as soon as the work is done.
     private static SqliteConnection Open(string path, bool readOnly = false) =>

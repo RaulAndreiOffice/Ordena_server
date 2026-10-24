@@ -268,7 +268,7 @@ public sealed class ArchiveSettingsViewModelTests : IDisposable
     {
         string[] unknown = [Path.Combine(_root, "a.pdf"), Path.Combine(_root, "b.pdf"), Path.Combine(_root, "escaneo.pdf")];
         _maintenance.CheckAnswer = _ => Result.Ok(new ArchiveCheckReport(5, [], [], unknown));
-        _maintenance.RegisterAnswer = _ => Result.Ok(new RegisterReport(2, [unknown[2]]));
+        _maintenance.RegisterAnswer = _ => Result.Ok(new RegisterReport(2, [unknown[2]], []));
         await _vm.CheckCommand.ExecuteAsync(null);
 
         await _vm.RegisterCommand.ExecuteAsync(null);
@@ -281,5 +281,22 @@ public sealed class ArchiveSettingsViewModelTests : IDisposable
         var dropped = Assert.IsType<FilesDroppedMessage>(_messages[1]);
         Assert.Equal([unknown[2]], dropped.Paths);
         Assert.False(dropped.KeepSource); // moved to its place once filled in
+        Assert.True(dropped.StartsPaid); // already in the archive: settled, like the two registered
+    }
+
+    // A file in the trash isn't imported, which would take it out of the trash: the message says it stayed.
+    [Fact]
+    public async Task What_is_in_the_trash_is_not_sent_to_the_import_queue()
+    {
+        var trashed = Path.Combine(_root, "_Papelera", "escaneo.pdf");
+        _maintenance.CheckAnswer = _ => Result.Ok(new ArchiveCheckReport(5, [], [], [trashed]));
+        _maintenance.RegisterAnswer = _ => Result.Ok(new RegisterReport(0, [], [trashed]));
+        await _vm.CheckCommand.ExecuteAsync(null);
+
+        await _vm.RegisterCommand.ExecuteAsync(null);
+
+        Assert.Equal(["Añadidos a Ordena: 0.\nPara la importación manual: 0.\nSe quedan en la papelera, sin importar: 1."], _dialogs.Infos);
+        Assert.Empty(_navigation.Visited);
+        Assert.Empty(_messages);
     }
 }

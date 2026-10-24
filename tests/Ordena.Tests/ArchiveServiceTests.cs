@@ -323,6 +323,21 @@ public sealed class ArchiveServiceTests : IDisposable
         Assert.Equal(_archive.Root, await ArchiveRootSettingAsync(newPc));
     }
 
+    // The archive's parent picked by mistake: every path has a folder too many, nothing is named the app's
+    // way, so that folder isn't taken as the archive.
+    [Fact]
+    public async Task Rebuild_of_a_folder_with_nothing_named_the_apps_way_keeps_the_setting()
+    {
+        await using var provider = await StartAsync(setArchiveRoot: false);
+        _elsewhere.WriteFile("Facturas/2026/1T/Recibidas/Repsol/2026-03-20_Repsol_T-1.pdf", TestPdf.Bytes("repsol"));
+
+        var result = await provider.GetRequiredService<IArchiveService>().RebuildIndexAsync(_elsewhere.Root, null, Ct);
+
+        Assert.Equal(0, result.Value.DocumentCount);
+        Assert.Single(result.Value.Unrecognized);
+        Assert.Null(await ArchiveRootSettingAsync(provider));
+    }
+
     [Fact]
     public async Task Rebuild_into_a_database_with_documents_throws()
     {

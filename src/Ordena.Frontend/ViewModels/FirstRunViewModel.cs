@@ -65,14 +65,16 @@ public sealed partial class FirstRunViewModel : ObservableObject
     // Raised once another language is picked and saved; the window is then shown again in it.
     public event EventHandler? LanguageChanged;
 
-    // Starts on the language already saved ("es" until one is picked). archiveRoot is the folder
-    // chosen before a language change, kept when the window is shown again.
-    public async Task LoadAsync(string? archiveRoot = null)
+    // Starts on the language already saved ("es" until one is picked). archiveRoot and hasArchive are the
+    // folder and the option chosen before a language change, kept when the window is shown again: losing
+    // «Ya tengo un archivo» there would start an empty index over a full archive.
+    public async Task LoadAsync(string? archiveRoot = null, bool hasArchive = false)
     {
         var current = (await _settings.GetAsync(CancellationToken.None)).Language;
         Language = Languages.FirstOrDefault(l => l.Code == current) ?? Languages[0];
         if (archiveRoot is not null)
             ArchiveRoot = archiveRoot;
+        HasArchive = hasArchive;
         _loaded = true;
     }
 
@@ -149,6 +151,13 @@ public sealed partial class FirstRunViewModel : ObservableObject
         }
 
         var report = rebuilt.Value;
+        if (report.DocumentCount == 0)
+        {
+            // The wrong folder (its parent, say): first run stays open to pick the right one.
+            await _dialogs.ShowErrorAsync(_localizer.Format("FirstRun_NothingRebuilt", ArchiveRoot));
+            return false;
+        }
+
         var leftOut = report.Unrecognized.Count + report.Duplicates.Count;
         var message = _localizer.Format("FirstRun_Rebuilt", report.DocumentCount, report.PartnerCount);
         if (leftOut > 0)

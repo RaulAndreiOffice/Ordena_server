@@ -169,6 +169,9 @@ Only the files that have an identical copy in the new one are deleted.</value>
     <value>Added to Ordena: {0:N0}.
 For manual import: {1:N0}.</value>
   </data>
+  <data name="Settings_RegisteredInTrash" xml:space="preserve">
+    <value>Left in the trash, not imported: {0:N0}.</value>
+  </data>
   <data name="Archive_Unavailable" xml:space="preserve">
     <value>The invoices folder isn't available: {0}</value>
   </data>
@@ -474,6 +477,12 @@ Rebuild the index from the folders and the file names? Ordena reads each PDF onc
   </data>
   <data name="FirstRun_RebuildProgress" xml:space="preserve">
     <value>Rebuilding the index…</value>
+  </data>
+  <data name="FirstRun_NothingRebuilt" xml:space="preserve">
+    <value>No invoice named the way Ordena names them was found in that folder:
+{0}
+
+Choose the invoices folder: the one that holds the years (2025, 2026…).</value>
   </data>
   <data name="FirstRun_Rebuilt" xml:space="preserve">
     <value>Index rebuilt: {0:N0} documents from {1:N0} suppliers and customers.</value>

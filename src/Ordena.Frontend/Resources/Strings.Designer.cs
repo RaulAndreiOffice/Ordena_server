@@ -1482,6 +1482,18 @@ namespace Ordena.Frontend.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No invoice named the way Ordena names them was found in that folder:
+        ///{0}
+        ///
+        ///Choose the invoices folder: the one that holds the years (2025, 2026…)..
+        /// </summary>
+        public static string FirstRun_NothingRebuilt {
+            get {
+                return ResourceManager.GetString("FirstRun_NothingRebuilt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose your invoices folder.
         /// </summary>
         public static string FirstRun_PickExistingTitle {
@@ -2622,6 +2634,15 @@ namespace Ordena.Frontend.Resources {
         public static string Settings_Registered {
             get {
                 return ResourceManager.GetString("Settings_Registered", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Left in the trash, not imported: {0:N0}..
+        /// </summary>
+        public static string Settings_RegisteredInTrash {
+            get {
+                return ResourceManager.GetString("Settings_RegisteredInTrash", resourceCulture);
             }
         }
         

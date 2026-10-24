@@ -11,7 +11,8 @@ namespace Ordena.Backend.Services;
 // hand, or left behind by a restore. A PDF whose path follows the app's naming is registered where it is,
 // as "Reconstruir índice" does for a whole archive, so the file doesn't move. Everything else is left for
 // the manual import queue, which says why: other names, no number in the name, content already archived,
-// a number the partner already has, and files outside the archive.
+// a number the partner already has, and files outside the archive. Except what is in _Papelera: importing
+// it would take it out of the trash, so it stays there, reported apart.
 internal sealed class FileRegistration(
     IUnitOfWorkFactory uowFactory, IFileStorage storage, IClock clock, ILogger<FileRegistration> logger)
 {
@@ -19,6 +20,7 @@ internal sealed class FileRegistration(
     {
         var now = clock.UtcNow;
         List<string> remaining = [];
+        List<string> inTrash = [];
         var registered = 0;
 
         await using var uow = uowFactory.Create();
@@ -40,7 +42,7 @@ internal sealed class FileRegistration(
                 || !hashes.Add(sha256)
                 || await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false) is not null)
             {
-                remaining.Add(path);
+                LeaveOut(path);
                 continue;
             }
 
@@ -52,7 +54,7 @@ internal sealed class FileRegistration(
                         && await uow.Documents.NumberExistsAsync(partner.Id, numberNorm, null, ct).ConfigureAwait(false)));
             if (numberTaken)
             {
-                remaining.Add(path);
+                LeaveOut(path);
                 continue;
             }
 
@@ -75,6 +77,13 @@ internal sealed class FileRegistration(
         }
 
         await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
-        return new RegisterReport(registered, remaining);
+        return new RegisterReport(registered, remaining, inTrash);
+
+        void LeaveOut(string path) => (IsInTrash(path) ? inTrash : remaining).Add(path);
+
+        bool IsInTrash(string path) =>
+            ArchiveNaming.IsInArchive(archiveRoot, path)
+            && ArchiveNaming.ToRelativePath(archiveRoot, path)
+                .StartsWith(ArchiveNaming.TrashFolder + "/", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -24,6 +24,8 @@ internal sealed class MaintenanceService(
 {
     public Task RunStartupAsync(CancellationToken ct) => Task.Run(async () =>
     {
+        // What is journaled from now on belongs to this run: a later recovery leaves it to the moves doing it.
+        recovery.StartRun(clock.UtcNow);
         Directory.CreateDirectory(paths.Root);
         storage.TryEmptyFolder(paths.Preview);
 

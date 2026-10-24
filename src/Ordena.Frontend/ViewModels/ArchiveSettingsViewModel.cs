@@ -223,7 +223,7 @@ public sealed partial class ArchiveSettingsViewModel : ObservableObject
     }
 
     // "Añadir a Ordena": PDFs already named as Ordena names them are registered where they are; the rest go to
-    // the import queue, which moves each one to its place once filled in.
+    // the import queue, which moves each one to its place once filled in, except those in the trash.
     [RelayCommand(CanExecute = nameof(HasUnknownFiles))]
     private async Task RegisterAsync()
     {
@@ -238,12 +238,16 @@ public sealed partial class ArchiveSettingsViewModel : ObservableObject
         UnknownFiles.Clear();
         if (report.Registered > 0)
             _messenger.Send(new DocumentsChangedMessage(DocumentsChange.Registered, 0));
-        await _dialogs.ShowInfoAsync(_localizer.Format("Settings_Registered", report.Registered, report.Remaining.Count));
+        var message = _localizer.Format("Settings_Registered", report.Registered, report.Remaining.Count);
+        if (report.InTrash.Count > 0)
+            message += "\n" + _localizer.Format("Settings_RegisteredInTrash", report.InTrash.Count);
+        await _dialogs.ShowInfoAsync(message);
 
         if (report.Remaining.Count > 0)
         {
             await _navigation.NavigateToAsync<ImportViewModel>();
-            _messenger.Send(new FilesDroppedMessage(report.Remaining));
+            // Already in the archive, so older documents: settled, like those registered above.
+            _messenger.Send(new FilesDroppedMessage(report.Remaining, StartsPaid: true));
         }
     }
 

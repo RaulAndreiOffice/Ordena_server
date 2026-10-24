@@ -13,7 +13,8 @@ public interface IDocumentService
     Task<DocumentDetails> GetAsync(int id, CancellationToken ct);
 
     // Saves the new values and renames or moves the file to match: another partner, number or type,
-    // or a date in another quarter or year. Also InvalidPartnerName, and DuplicateNumber when the
+    // or a date in another quarter or year. A change that keeps the file name (the paid status) is saved
+    // even without the archive folder. Also InvalidPartnerName, and DuplicateNumber when the
     // partner already has that number (call again with ConfirmDuplicate to save anyway).
     // A blank partner or number throws ArgumentException; a deleted document InvalidOperationException.
     Task<Result<DocumentListItem>> EditAsync(EditDocumentRequest request, CancellationToken ct);

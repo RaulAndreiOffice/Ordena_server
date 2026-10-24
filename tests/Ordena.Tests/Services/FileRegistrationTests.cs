@@ -103,6 +103,20 @@ public sealed class FileRegistrationTests : IDisposable
         Assert.Contains(Rows(), r => r.StartsWith(Folder + "2026-03-14_Telefonica-Espana_B-1.pdf |", StringComparison.Ordinal));
     }
 
+    // Importing a trashed file would take it out of the trash: one that can't be registered stays there.
+    [Fact]
+    public async Task What_cant_be_registered_in_the_trash_stays_there_reported_apart()
+    {
+        var trashed = Dropped("_Papelera/2026/escaneo.pdf");
+        var loose = Dropped("2026/escaneo.pdf");
+
+        var report = await _registration.RunAsync(_archive.Root, [trashed, loose], Ct);
+
+        Assert.Equal([trashed], report.InTrash);
+        Assert.Equal([loose], report.Remaining);
+        Assert.Equal(0, report.Registered);
+    }
+
     // A PDF copied into the archive by hand, with content unique to its path. Returns the full path.
     private string Dropped(string relativePath) =>
         Path.GetFullPath(_archive.WriteFile(relativePath, TestPdf.Bytes(relativePath)));

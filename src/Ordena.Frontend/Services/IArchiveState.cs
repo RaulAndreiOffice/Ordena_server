@@ -16,8 +16,9 @@ public interface IArchiveState : INotifyPropertyChanged
     // Set by "Importar carpeta" while its run copies files in: the archive mustn't move or be checked meanwhile.
     bool IsImporting { get; set; }
 
-    // Reads the setting and looks for the folder again ("Reintentar", and on every page change). When the
-    // folder is back, the moves a crash interrupted while it was away are settled.
+    // Reads the setting and looks for the folder again ("Reintentar", and on every page change); the latest
+    // look, or a folder located meanwhile, wins over one still under way. When the folder is back, the moves
+    // a crash interrupted while it was away are settled.
     Task RefreshAsync();
 
     // "Buscar…" and "Cambiar ubicación…": the folder the archive is in now, picked by the user and checked

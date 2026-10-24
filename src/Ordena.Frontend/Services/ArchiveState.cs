@@ -12,8 +12,10 @@ internal sealed partial class ArchiveState(
     IDialogService dialogs,
     ILocalizer localizer) : ObservableObject, IArchiveState
 {
-    // The refresh under way: page changes in a row share it.
-    private Task _refreshing = Task.CompletedTask;
+    // Bumped by each refresh and by SetRoot. A refresh that finishes after a newer one started, or after the
+    // folder was located, leaves what they found: "Reintentar" always looks again, and an old "missing"
+    // can't bring the banner back over a folder just found.
+    private int _version;
 
     [ObservableProperty]
     private string? _root;
@@ -25,7 +27,23 @@ internal sealed partial class ArchiveState(
     [ObservableProperty]
     private bool _isImporting;
 
-    public Task RefreshAsync() => _refreshing.IsCompleted ? _refreshing = RefreshCoreAsync() : _refreshing;
+    public async Task RefreshAsync()
+    {
+        var version = ++_version;
+        var root = (await settings.GetAsync(CancellationToken.None)).ArchiveRoot;
+        var available = await maintenance.GetArchiveStatusAsync(CancellationToken.None) != ArchiveStatus.Unavailable;
+        if (version != _version)
+            return;
+
+        var cameBack = available && !IsAvailable;
+        Root = root;
+        IsAvailable = available;
+
+        // Back after being away: settle what a crash left halfway meanwhile (only that: the backend leaves
+        // moves in progress alone). After the banner has gone, so a recovery that fails can't keep it up.
+        if (cameBack)
+            await maintenance.RecoverInterruptedMovesAsync(CancellationToken.None);
+    }
 
     public async Task<bool> LocateAsync()
     {
@@ -47,16 +65,8 @@ internal sealed partial class ArchiveState(
 
     public void SetRoot(string newRoot)
     {
+        _version++;
         Root = newRoot;
         IsAvailable = true;
-    }
-
-    private async Task RefreshCoreAsync()
-    {
-        Root = (await settings.GetAsync(CancellationToken.None)).ArchiveRoot;
-        var available = await maintenance.GetArchiveStatusAsync(CancellationToken.None) != ArchiveStatus.Unavailable;
-        if (available && !IsAvailable)
-            await maintenance.RecoverInterruptedMovesAsync(CancellationToken.None);
-        IsAvailable = available;
     }
 }

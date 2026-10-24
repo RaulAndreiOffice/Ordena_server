@@ -142,6 +142,10 @@ internal sealed class ArchiveService(
 
             var report = await indexRebuild.RunAsync(archiveRoot, progress, ct).ConfigureAwait(false);
 
+            // Nothing named the app's way: not the invoices folder (its parent, say), so it isn't used.
+            if (report.DocumentCount == 0)
+                return Result.Ok(report);
+
             await using var uow = uowFactory.Create();
             await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, archiveRoot, CancellationToken.None).ConfigureAwait(false);
             await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);

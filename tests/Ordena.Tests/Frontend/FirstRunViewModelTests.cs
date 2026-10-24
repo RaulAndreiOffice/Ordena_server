@@ -77,6 +77,18 @@ public sealed class FirstRunViewModelTests : IDisposable
         await _firstRun.LoadAsync(@"E:\Contabilidad\Facturas");
 
         Assert.Equal(@"E:\Contabilidad\Facturas", _firstRun.ArchiveRoot);
+        Assert.False(_firstRun.HasArchive);
+    }
+
+    // «Ya tengo un archivo» survives the language change too: coming back on «Empezar de cero» would start
+    // an empty index over a full archive.
+    [Fact]
+    public async Task Shown_again_after_a_language_change_it_keeps_the_existing_archive_option()
+    {
+        await _firstRun.LoadAsync(@"E:\Facturas", hasArchive: true);
+
+        Assert.True(_firstRun.HasArchive);
+        Assert.Equal("La carpeta que contiene los años (2025, 2026…) y _backup.", _firstRun.FolderHint);
     }
 
     [Fact]
@@ -196,6 +208,22 @@ public sealed class FirstRunViewModelTests : IDisposable
         Assert.Equal(["Índice reconstruido: 2.995 documentos de 41 proveedores y clientes.\n\n"
                       + "2 PDF no tienen el nombre que pone Ordena: los verás en Ajustes → Comprobar carpeta."], _dialogs.Infos);
         Assert.Equal(1, _completed);
+    }
+
+    // The archive's parent picked by mistake: nothing found, so first run says which folder to pick and stays.
+    [Fact]
+    public async Task A_rebuild_that_finds_nothing_says_so_and_stays_on_first_run()
+    {
+        _firstRun.HasArchive = true;
+        _firstRun.ArchiveRoot = @"D:\";
+        _archive.RebuildAnswer = (_, _, _) =>
+            Result.Ok(new RebuildReport(0, 0, [@"D:\Facturas\2026\1T\Recibidas\Repsol\2026-03-20_Repsol_T-1.pdf"], []));
+
+        await _firstRun.StartCommand.ExecuteAsync(null);
+
+        Assert.StartsWith("No se ha encontrado ninguna factura con los nombres de Ordena en esa carpeta:\nD:\\", Assert.Single(_dialogs.Errors));
+        Assert.Empty(_dialogs.Infos);
+        Assert.Equal(0, _completed);
     }
 
     [Fact]

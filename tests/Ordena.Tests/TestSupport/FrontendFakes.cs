@@ -411,7 +411,7 @@ internal sealed class FakeMaintenanceService : IMaintenanceService
     public Func<CancellationToken, Result<ArchiveCheckReport>> CheckAnswer { get; set; } = _ =>
         Result.Ok(new ArchiveCheckReport(0, [], [], []));
     public Func<IReadOnlyList<string>, Result<RegisterReport>> RegisterAnswer { get; set; } = paths =>
-        Result.Ok(new RegisterReport(paths.Count, []));
+        Result.Ok(new RegisterReport(paths.Count, [], []));
     public List<string> Calls { get; } = [];
 
     // Run by BackupNowAsync when it succeeds: the time it records, as the real one does.
@@ -419,16 +419,27 @@ internal sealed class FakeMaintenanceService : IMaintenanceService
 
     public Task RunStartupAsync(CancellationToken ct) => Task.CompletedTask;
 
+    // The next status check waits for this, once: a check still under way when something else happens.
+    public TaskCompletionSource<ArchiveStatus>? HoldNextStatus { get; set; }
+
+    // What recovering throws, if anything.
+    public Exception? RecoverThrows { get; set; }
+
     public Task<ArchiveStatus> GetArchiveStatusAsync(CancellationToken ct)
     {
         Calls.Add("status");
+        if (HoldNextStatus is { } held)
+        {
+            HoldNextStatus = null;
+            return held.Task;
+        }
         return Task.FromResult(Status);
     }
 
     public Task<Result<int>> RecoverInterruptedMovesAsync(CancellationToken ct)
     {
         Calls.Add("recover");
-        return Task.FromResult(Result.Ok(0));
+        return RecoverThrows is { } error ? Task.FromException<Result<int>>(error) : Task.FromResult(Result.Ok(0));
     }
 
     public Task WarmUpAsync(CancellationToken ct) => Task.CompletedTask;

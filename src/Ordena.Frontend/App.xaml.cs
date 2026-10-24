@@ -49,6 +49,10 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // Let go before anything else: the window is already closed, so Ordena started again from now on
+        // (or by "Reiniciar ahora" below) must open its own instead of handing over to this one.
+        _instance?.Dispose();
+
         if (_host is not null)
         {
             // "Reiniciar ahora" in Ajustes: the new instance starts once this one has finished.
@@ -68,9 +72,6 @@ public partial class App : Application
             }
 
             _host.StopAsync().GetAwaiter().GetResult();
-
-            // Let go first, or the new instance would find this one still running and hand over to it.
-            _instance?.Dispose();
             if (restart)
                 StartNewInstance();
             _host.Dispose();
@@ -182,21 +183,23 @@ public partial class App : Application
     }
 
     // Picking another language closes first run; it is shown again in that language, a new window
-    // because its texts are read when it loads, with the folder already chosen kept.
+    // because its texts are read when it loads, with the folder and the option already chosen kept.
     private async Task<bool> RunFirstRunAsync(IServiceProvider services)
     {
         string? folder = null;
+        var hasArchive = false;
         while (true)
         {
             var window = services.GetRequiredService<FirstRunWindow>();
             window.Language = XmlLanguage.GetLanguage((Strings.Culture ?? CultureInfo.CurrentCulture).IetfLanguageTag);
-            await window.ViewModel.LoadAsync(folder);
+            await window.ViewModel.LoadAsync(folder, hasArchive);
             if (window.ShowDialog() == true)
                 return true;
             if (!window.SwitchingLanguage)
                 return false;
 
             folder = window.ViewModel.ArchiveRoot;
+            hasArchive = window.ViewModel.HasArchive;
             var settings = await services.GetRequiredService<ISettingsService>().GetAsync(CancellationToken.None);
             ApplyCulture(settings.Language);
         }

@@ -107,6 +107,30 @@ public sealed class MaintenanceServiceTests : IDisposable
         Assert.Equal([MarchPath], _archive.Files());
     }
 
+    // An operation this run journaled is a move still in progress (an import or an edit running right now),
+    // not a crash: a recovery during the session, as when the archive's disk comes back, leaves it alone.
+    // The next start settles it if it really was interrupted.
+    [Fact]
+    public async Task A_recovery_during_the_session_leaves_this_runs_moves_alone()
+    {
+        var crashing = new CrashingStorage(new FileStorage(TimeSpan.FromMilliseconds(1)));
+        await using (var first = await StartAsync(crashing))
+        {
+            var id = await ImportAsync(first);
+            _clock.UtcNow = _clock.UtcNow.AddMinutes(5); // later in the same run
+            crashing.When = CrashingStorage.Crash.AfterMove;
+            await Assert.ThrowsAsync<SimulatedCrashException>(() =>
+                first.GetRequiredService<IDocumentService>().EditAsync(EditToApril(id), Ct));
+
+            Assert.Equal(0, (await first.GetRequiredService<IMaintenanceService>().RecoverInterruptedMovesAsync(Ct)).Value);
+            Assert.Equal([AprilPath], _archive.Files());
+        }
+
+        await using var second = await StartAsync();
+
+        Assert.Equal([MarchPath], _archive.Files());
+    }
+
     [Fact]
     public async Task BackupNow_writes_a_working_copy_into_the_archive()
     {
@@ -148,6 +172,31 @@ public sealed class MaintenanceServiceTests : IDisposable
 
         Assert.True(result.IsSuccess, $"{result.Error}: {result.Detail}");
         Assert.Equal(1L, CountDocumentsIn(_archive.Path("_backup", BackupName(_clock.UtcNow))));
+    }
+
+    // The finished copy can't take its name while another program (the indexer, OneDrive) holds the file
+    // already under it, from a backup earlier this same minute: it waits for that too.
+    [Fact]
+    public async Task A_backup_waits_for_its_final_name_held_for_a_moment()
+    {
+        await using var provider = await StartAsync();
+        await ImportAsync(provider);
+        var final = _archive.Path("_backup", BackupName(_clock.UtcNow));
+        Directory.CreateDirectory(Path.GetDirectoryName(final)!);
+        File.WriteAllBytes(final, [1]);
+        var holder = new FileStream(final, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var release = Task.Run(async () =>
+        {
+            await Task.Delay(250, Ct);
+            await holder.DisposeAsync();
+        }, Ct);
+
+        var result = await provider.GetRequiredService<IMaintenanceService>().BackupNowAsync(Ct);
+        await release;
+
+        Assert.True(result.IsSuccess, $"{result.Error}: {result.Detail}");
+        Assert.Equal(1L, CountDocumentsIn(final));
+        Assert.False(File.Exists(final + ".tmp"));
     }
 
     [Fact]

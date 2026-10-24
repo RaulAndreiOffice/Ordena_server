@@ -241,7 +241,8 @@ internal sealed class FileStorage : IFileStorage
         }
     }
 
-    private static bool IsLocked(IOException ex) => LowWord(ex) is ErrorSharingViolation or ErrorLockViolation;
+    // Another program has the file open: a sharing or lock violation. Also used by the database backup.
+    internal static bool IsLocked(IOException ex) => LowWord(ex) is ErrorSharingViolation or ErrorLockViolation;
 
     private static int LowWord(IOException ex) => ex.HResult & 0xFFFF;
 

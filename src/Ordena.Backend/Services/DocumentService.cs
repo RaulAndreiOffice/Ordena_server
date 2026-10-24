@@ -128,9 +128,6 @@ internal sealed class DocumentService(
     {
         await using var uow = uowFactory.Create();
         var document = RequireActive(await LoadAsync(uow, request.Id, ct).ConfigureAwait(false));
-        var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
-        if (!root.IsSuccess)
-            return Result.Fail<DocumentListItem>(root.Error.Value, root.Detail);
 
         var resolved = await partnerResolver.GetOrCreateAsync(uow, request.PartnerName, ct).ConfigureAwait(false);
         if (!resolved.IsSuccess)
@@ -148,7 +145,7 @@ internal sealed class DocumentService(
         var newPath = ArchiveNaming.BuildRelativePath(
             request.IssueDate, request.Direction, request.Type, docNumber, partner.FolderName);
         var now = clock.UtcNow;
-        var moved = await archiveMover.MoveAsync(uow, document, newPath, root.Value, d =>
+        void Apply(Document d)
         {
             d.Partner = partner;
             d.DocNumber = docNumber;
@@ -158,7 +155,22 @@ internal sealed class DocumentService(
             d.Direction = request.Direction;
             d.IsPaid = request.IsPaid;
             d.UpdatedAt = now;
-        }, ct).ConfigureAwait(false);
+        }
+
+        var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
+        if (!root.IsSuccess)
+        {
+            // Without the archive folder, only a change that keeps the file name can be saved: marking it paid,
+            // say, from Buscar while the disk is unplugged. Anything else would have to move the file. A new
+            // partner was only staged, so returning drops it.
+            if (!string.Equals(newPath, document.RelativePath, StringComparison.Ordinal))
+                return Result.Fail<DocumentListItem>(root.Error.Value, root.Detail);
+            Apply(document);
+            await uow.SaveChangesAsync(ct).ConfigureAwait(false);
+            return Result.Ok(document.ToListItem());
+        }
+
+        var moved = await archiveMover.MoveAsync(uow, document, newPath, root.Value, Apply, ct).ConfigureAwait(false);
 
         if (!moved.IsSuccess)
         {

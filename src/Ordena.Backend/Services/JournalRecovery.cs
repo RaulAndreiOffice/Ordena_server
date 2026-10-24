@@ -11,14 +11,38 @@ namespace Ordena.Backend.Services;
 internal sealed class JournalRecovery(
     IUnitOfWorkFactory uowFactory, IFileStorage storage, ILogger<JournalRecovery> logger)
 {
-    // Returns how many interrupted moves it resolved. One it can't resolve yet,
-    // because a file is locked, stays Pending for the next try.
+    // One recovery at a time: two would both try to settle the same operations.
+    private readonly SemaphoreSlim _gate = new(1, 1);
+
+    // When this run of the app started. An operation journaled after it isn't a crash's: it is a move in
+    // progress right now (an import, an edit, a bulk import), and settling it would undo that work.
+    private DateTime? _runStartedAt;
+
+    // Called once at startup, before anything moves a file.
+    public void StartRun(DateTime utcNow) => _runStartedAt = utcNow;
+
+    // Returns how many interrupted moves it resolved. One it can't resolve yet, because a file is locked,
+    // stays Pending for the next try; so does one this run started, until the next start.
     public async Task<int> RecoverAsync(string archiveRoot, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await RecoverCoreAsync(archiveRoot, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task<int> RecoverCoreAsync(string archiveRoot, CancellationToken ct)
     {
         await using var uow = uowFactory.Create();
         var resolved = 0;
 
-        foreach (var operation in await uow.FileOperations.GetPendingAsync(ct).ConfigureAwait(false))
+        var pending = await uow.FileOperations.GetPendingAsync(ct).ConfigureAwait(false);
+        foreach (var operation in pending.Where(o => _runStartedAt is not { } started || o.CreatedAt <= started))
         {
             try
             {
