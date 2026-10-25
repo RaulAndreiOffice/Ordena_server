@@ -24,4 +24,9 @@ public class Result
 
     public static Result<T> Ok<T>(T value) => new(value);
     public static Result<T> Fail<T>(ErrorCode error, string? detail = null) => new(error, detail);
+
+    // This failure passed on as another result type, with its code and detail.
+    public Result<T> FailAs<T>() => IsSuccess
+        ? throw new InvalidOperationException("Only a failed result can be passed on.")
+        : new(Error.Value, Detail);
 }

@@ -47,13 +47,8 @@ internal sealed class MaintenanceService(
         return storage.DirectoryExists(root) ? ArchiveStatus.Available : ArchiveStatus.Unavailable;
     }, ct);
 
-    public Task<Result<int>> RecoverInterruptedMovesAsync(CancellationToken ct) => Task.Run(async () =>
-    {
-        var root = await GetArchiveRootAsync(ct).ConfigureAwait(false);
-        return root.IsSuccess
-            ? Result.Ok(await recovery.RecoverAsync(root.Value, ct).ConfigureAwait(false))
-            : Result.Fail<int>(root.Error.Value, root.Detail);
-    }, ct);
+    public Task<Result<int>> RecoverInterruptedMovesAsync(CancellationToken ct) =>
+        WithArchiveAsync(root => recovery.RecoverAsync(root, ct), ct);
 
     public Task WarmUpAsync(CancellationToken ct) => Task.Run(async () =>
     {
@@ -72,20 +67,19 @@ internal sealed class MaintenanceService(
     public Task<Result> BackupIfChangedAsync(CancellationToken ct) =>
         Task.Run(() => BackupAsync(onlyIfChanged: true, ct), ct);
 
-    public Task<Result<ArchiveCheckReport>> CheckArchiveAsync(CancellationToken ct) => Task.Run(async () =>
-    {
-        var root = await GetArchiveRootAsync(ct).ConfigureAwait(false);
-        return root.IsSuccess
-            ? Result.Ok(await archiveCheck.RunAsync(root.Value, ct).ConfigureAwait(false))
-            : Result.Fail<ArchiveCheckReport>(root.Error.Value, root.Detail);
-    }, ct);
+    public Task<Result<ArchiveCheckReport>> CheckArchiveAsync(CancellationToken ct) =>
+        WithArchiveAsync(root => archiveCheck.RunAsync(root, ct), ct);
 
-    public Task<Result<RegisterReport>> RegisterFilesAsync(IReadOnlyList<string> paths, CancellationToken ct) => Task.Run(async () =>
+    public Task<Result<RegisterReport>> RegisterFilesAsync(IReadOnlyList<string> paths, CancellationToken ct) =>
+        WithArchiveAsync(root => registration.RunAsync(root, paths, ct), ct);
+
+    // Runs work on the archive folder, or says why it isn't there.
+    private Task<Result<T>> WithArchiveAsync<T>(Func<string, Task<T>> work, CancellationToken ct) => Task.Run(async () =>
     {
-        var root = await GetArchiveRootAsync(ct).ConfigureAwait(false);
+        var root = await ArchiveRoot.GetAsync(uowFactory, storage, ct).ConfigureAwait(false);
         return root.IsSuccess
-            ? Result.Ok(await registration.RunAsync(root.Value, paths, ct).ConfigureAwait(false))
-            : Result.Fail<RegisterReport>(root.Error.Value, root.Detail);
+            ? Result.Ok(await work(root.Value).ConfigureAwait(false))
+            : root.FailAs<T>();
     }, ct);
 
     private async Task<Result> BackupAsync(bool onlyIfChanged, CancellationToken ct)
@@ -99,7 +93,7 @@ internal sealed class MaintenanceService(
 
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Result.Fail(root.Error.Value, root.Detail);
+            return root;
 
         if (onlyIfChanged)
         {
@@ -158,11 +152,5 @@ internal sealed class MaintenanceService(
         await using var uow = uowFactory.Create();
         var settings = await uow.Settings.GetAllAsync(ct).ConfigureAwait(false);
         return settings.GetValueOrDefault(SettingKeys.ArchiveRoot);
-    }
-
-    private async Task<Result<string>> GetArchiveRootAsync(CancellationToken ct)
-    {
-        await using var uow = uowFactory.Create();
-        return await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
     }
 }

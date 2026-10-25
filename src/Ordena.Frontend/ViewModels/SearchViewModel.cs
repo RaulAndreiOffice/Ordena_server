@@ -27,7 +27,7 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
     private readonly INavigationService _navigation;
 
     // The search waiting or running; a newer one cancels it, so its answer is never shown.
-    private CancellationTokenSource? _pending;
+    private readonly Debouncer _searches = new();
 
     // Set by the first visit, which runs the first search. Clearing the filters sets several at once.
     private bool _loaded;
@@ -307,24 +307,12 @@ public sealed partial class SearchViewModel : PageViewModel, IRecipient<Document
         await SearchAsync(TimeSpan.Zero);
     }
 
-    private async Task SearchAsync(TimeSpan delay)
+    private Task SearchAsync(TimeSpan delay) => _searches.RunAsync(delay, async ct =>
     {
-        _pending?.Cancel();
-        var pending = _pending = new CancellationTokenSource();
-        try
-        {
-            if (delay > TimeSpan.Zero)
-                await Task.Delay(delay, pending.Token);
-
-            var result = await _search.SearchAsync(BuildQuery(), pending.Token);
-            if (!pending.IsCancellationRequested)
-                Show(result);
-        }
-        catch (OperationCanceledException) when (pending.IsCancellationRequested)
-        {
-            // A newer search took over.
-        }
-    }
+        var result = await _search.SearchAsync(BuildQuery(), ct);
+        if (!ct.IsCancellationRequested)
+            Show(result);
+    });
 
     private void ResetCriteria()
     {

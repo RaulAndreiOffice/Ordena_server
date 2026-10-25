@@ -38,13 +38,13 @@ internal sealed class BulkImportService(
         await using var uow = uowFactory.Create();
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Fail(root.Error.Value, root.Detail);
+            return root.FailAs<BulkImportPreview>();
 
         var folder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(options.Folder));
         if (!storage.DirectoryExists(folder))
-            return Fail(ErrorCode.FileMissing, folder);
+            return Result.Fail<BulkImportPreview>(ErrorCode.FileMissing, folder);
         if (ArchiveNaming.AreNested(folder, root.Value))
-            return Fail(ErrorCode.InvalidArchiveFolder, folder);
+            return Result.Fail<BulkImportPreview>(ErrorCode.InvalidArchiveFolder, folder);
 
         var files = storage.ListFiles(folder)
             .Where(f => string.Equals(Path.GetExtension(f), ".pdf", StringComparison.OrdinalIgnoreCase))
@@ -55,7 +55,7 @@ internal sealed class BulkImportService(
 
         var pattern = ChoosePattern(options, detected);
         if (!pattern.IsSuccess)
-            return Fail(pattern.Error.Value, pattern.Detail);
+            return pattern.FailAs<BulkImportPreview>();
 
         var existingNumbers = (await uow.Documents.GetNumberKeysAsync(ct).ConfigureAwait(false)).ToHashSet();
         var partners = await uow.Partners.ListAllAsync(ct).ConfigureAwait(false);
@@ -184,25 +184,14 @@ internal sealed class BulkImportService(
     {
         var watch = Stopwatch.StartNew();
         string FinalName(string name) => run.PartnerMap.TryGetValue(name, out var mapped) ? mapped : name;
-
-        // Partners first, in one transaction: each new one gets its folder name once, whatever the order.
-        var invalidPartners = new HashSet<string>(StringComparer.Ordinal);
-        await using (var uow = uowFactory.Create())
-        {
-            foreach (var name in run.Items.Select(i => FinalName(i.PartnerName)).Distinct(StringComparer.Ordinal))
-            {
-                if (!(await partnerResolver.GetOrCreateAsync(uow, name, CancellationToken.None).ConfigureAwait(false)).IsSuccess)
-                    invalidPartners.Add(name);
-            }
-            await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
-        }
+        var invalidPartners = await CreatePartnersAsync(run.Items.Select(i => FinalName(i.PartnerName))).ConfigureAwait(false);
 
         var imported = 0;
         var duplicates = new List<string>();
         var numberExists = new List<string>();
         var failed = new List<BulkImportFailure>();
         var cancelled = false;
-        for (var i = 0; i < run.Items.Count; i++)
+        foreach (var (i, item) in run.Items.Index())
         {
             // Only between files: each import is whole, so a cancelled run leaves a consistent archive.
             if (ct.IsCancellationRequested)
@@ -211,7 +200,6 @@ internal sealed class BulkImportService(
                 break;
             }
 
-            var item = run.Items[i];
             var partner = FinalName(item.PartnerName);
             if (invalidPartners.Contains(partner))
             {
@@ -248,6 +236,18 @@ internal sealed class BulkImportService(
         return new BulkImportReport(imported, duplicates, numberExists, failed, cancelled, watch.Elapsed);
     }
 
-    private static Result<BulkImportPreview> Fail(ErrorCode error, string? detail) =>
-        Result.Fail<BulkImportPreview>(error, detail);
+    // Partners first, in one transaction: each new one gets its folder name once, whatever the order.
+    // Returns the names that can't be a partner's.
+    private async Task<HashSet<string>> CreatePartnersAsync(IEnumerable<string> names)
+    {
+        var invalid = new HashSet<string>(StringComparer.Ordinal);
+        await using var uow = uowFactory.Create();
+        foreach (var name in names.Distinct(StringComparer.Ordinal))
+        {
+            if (!(await partnerResolver.GetOrCreateAsync(uow, name, CancellationToken.None).ConfigureAwait(false)).IsSuccess)
+                invalid.Add(name);
+        }
+        await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
+        return invalid;
+    }
 }

@@ -6,12 +6,13 @@ namespace Ordena.Backend.Data;
 
 // Runs on every connection EF opens. These are the settings measured in the benchmark (Plan.md):
 // WAL + synchronous=NORMAL for fast commits (the journal handles recovery),
-// a 20 MB page cache so the whole database stays in memory, temporary tables in RAM.
+// a 64 MB page cache so the whole database stays in memory up to about 80,000 documents (it is a maximum:
+// a smaller database uses only what it needs), temporary tables in RAM.
 internal sealed class SqlitePragmaInterceptor : DbConnectionInterceptor
 {
     // Only these three on a read-only connection: switching a database to WAL writes to the file.
     // EF opens one read-only to check that the database exists before migrating.
-    private const string ConnectionPragmas = "PRAGMA synchronous=NORMAL; PRAGMA cache_size=-20000; PRAGMA temp_store=MEMORY;";
+    private const string ConnectionPragmas = "PRAGMA synchronous=NORMAL; PRAGMA cache_size=-64000; PRAGMA temp_store=MEMORY;";
     private const string WalPragma = "PRAGMA journal_mode=WAL; ";
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData) =>

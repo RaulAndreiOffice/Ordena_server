@@ -37,7 +37,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
 
     // The options the current preview was analyzed with; re-analysis changes only the pattern.
     private BulkImportOptions? _options;
-    private CancellationTokenSource? _pendingPattern;
+    private readonly Debouncer _reanalysis = new();
     private CancellationTokenSource? _run;
 
     // Set while the page itself picks a pattern card or clears the typed pattern, so that doesn't analyze again.
@@ -206,7 +206,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
     private async Task AnalyzeAsync()
     {
         // A re-analysis still on its way belongs to the folder analyzed before.
-        _pendingPattern?.Cancel();
+        _reanalysis.Cancel();
         var options = new BulkImportOptions
         {
             Folder = Folder.Trim(),
@@ -278,15 +278,10 @@ public sealed partial class BulkImportViewModel : PageViewModel
         if (_options is null)
             return;
 
-        _pendingPattern?.Cancel();
-        var pending = _pendingPattern = new CancellationTokenSource();
-        try
+        await _reanalysis.RunAsync(delay, async ct =>
         {
-            if (delay > TimeSpan.Zero)
-                await Task.Delay(delay, pending.Token);
-
-            var preview = await _bulk.AnalyzeAsync(_options with { Pattern = pattern, DateFormat = dateFormat }, pending.Token);
-            if (pending.IsCancellationRequested)
+            var preview = await _bulk.AnalyzeAsync(_options with { Pattern = pattern, DateFormat = dateFormat }, ct);
+            if (ct.IsCancellationRequested)
                 return;
 
             if (preview.Error == ErrorCode.InvalidNamePattern)
@@ -302,11 +297,7 @@ public sealed partial class BulkImportViewModel : PageViewModel
 
             PatternError = null;
             Show(preview.Value);
-        }
-        catch (OperationCanceledException) when (pending.IsCancellationRequested)
-        {
-            // A newer pattern took over.
-        }
+        });
     }
 
     [RelayCommand]

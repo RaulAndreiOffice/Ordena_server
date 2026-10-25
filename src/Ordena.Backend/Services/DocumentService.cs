@@ -49,7 +49,7 @@ internal sealed class DocumentService(
         var document = RequireActive(await LoadAsync(uow, id, ct).ConfigureAwait(false));
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Result.Fail(root.Error.Value, root.Detail);
+            return root;
 
         var now = clock.UtcNow;
         var trashPath = ArchiveNaming.ToTrash(document.RelativePath);
@@ -68,7 +68,7 @@ internal sealed class DocumentService(
             throw new InvalidOperationException($"Document {id} is not in the trash.");
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Result.Fail(root.Error.Value, root.Detail);
+            return root;
 
         var now = clock.UtcNow;
         var standardPath = ArchiveNaming.BuildRelativePath(document, document.Partner);
@@ -108,11 +108,11 @@ internal sealed class DocumentService(
             var document = await LoadAsync(uow, id, ct).ConfigureAwait(false);
             var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
             if (!root.IsSuccess)
-                return Result.Fail(root.Error.Value, root.Detail);
+                return root;
 
             var read = await storage.ReadAsync(path, ct).ConfigureAwait(false);
             if (!read.IsSuccess)
-                return Result.Fail(read.Error.Value, read.Detail);
+                return read;
             if (Sha256Hasher.Compute(read.Value) != document.Sha256)
                 return Result.Fail(ErrorCode.NotSameFile, path);
 
@@ -131,7 +131,7 @@ internal sealed class DocumentService(
 
         var resolved = await partnerResolver.GetOrCreateAsync(uow, request.PartnerName, ct).ConfigureAwait(false);
         if (!resolved.IsSuccess)
-            return Result.Fail<DocumentListItem>(resolved.Error.Value, resolved.Detail);
+            return resolved.FailAs<DocumentListItem>();
         var partner = resolved.Value;
         var partnerIsNew = partner.Id == 0;
 
@@ -158,17 +158,19 @@ internal sealed class DocumentService(
         }
 
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
-        if (!root.IsSuccess)
+
+        // The same file name (marking it paid, say): only the row changes, so it is saved even without the
+        // archive folder, as from Buscar while the disk is unplugged.
+        if (string.Equals(newPath, document.RelativePath, StringComparison.Ordinal))
         {
-            // Without the archive folder, only a change that keeps the file name can be saved: marking it paid,
-            // say, from Buscar while the disk is unplugged. Anything else would have to move the file. A new
-            // partner was only staged, so returning drops it.
-            if (!string.Equals(newPath, document.RelativePath, StringComparison.Ordinal))
-                return Result.Fail<DocumentListItem>(root.Error.Value, root.Detail);
             Apply(document);
             await uow.SaveChangesAsync(ct).ConfigureAwait(false);
             return Result.Ok(document.ToListItem());
         }
+
+        // Anything else moves the file, so it needs the folder. A new partner was only staged: returning drops it.
+        if (!root.IsSuccess)
+            return root.FailAs<DocumentListItem>();
 
         var moved = await archiveMover.MoveAsync(uow, document, newPath, root.Value, Apply, ct).ConfigureAwait(false);
 
@@ -180,7 +182,7 @@ internal sealed class DocumentService(
                 uow.Partners.Remove(partner);
                 await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
             }
-            return Result.Fail<DocumentListItem>(moved.Error.Value, moved.Detail);
+            return moved.FailAs<DocumentListItem>();
         }
 
         return Result.Ok(document.ToListItem());

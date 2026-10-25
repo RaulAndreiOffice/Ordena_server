@@ -16,7 +16,8 @@ internal sealed class JournalRecovery(
 
     // When this run of the app started. An operation journaled after it isn't a crash's: it is a move in
     // progress right now (an import, an edit, a bulk import), and settling it would undo that work.
-    private DateTime? _runStartedAt;
+    // Until StartRun (as in tests), every pending operation is a crash's.
+    private DateTime _runStartedAt = DateTime.MaxValue;
 
     // Called once at startup, before anything moves a file.
     public void StartRun(DateTime utcNow) => _runStartedAt = utcNow;
@@ -42,7 +43,7 @@ internal sealed class JournalRecovery(
         var resolved = 0;
 
         var pending = await uow.FileOperations.GetPendingAsync(ct).ConfigureAwait(false);
-        foreach (var operation in pending.Where(o => _runStartedAt is not { } started || o.CreatedAt <= started))
+        foreach (var operation in pending.Where(o => o.CreatedAt <= _runStartedAt))
         {
             try
             {

@@ -38,27 +38,13 @@ internal sealed class FileRegistration(
                 ? ArchiveNaming.TryParse(ArchiveNaming.ToRelativePath(archiveRoot, path))
                 : null;
             var sha256 = parsed is { DocNumber.Length: > 0 } ? IndexRebuild.TryHash(path) : null;
-            if (parsed is null || sha256 is null
-                || !hashes.Add(sha256)
-                || await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false) is not null)
+            if (parsed is null || sha256 is null || !await IsNewContentAsync(sha256) || await IsNumberTakenAsync(parsed))
             {
-                LeaveOut(path);
+                (IsInTrash(path) ? inTrash : remaining).Add(path);
                 continue;
             }
 
-            var numberNorm = TextNormalizer.NormalizeNumber(parsed.DocNumber);
-            partners.TryGetValue(parsed.PartnerFolder, out var partner);
-            var numberTaken = !parsed.InTrash
-                && (!numbers.Add((parsed.PartnerFolder.ToUpperInvariant(), numberNorm))
-                    || (partner is { Id: > 0 }
-                        && await uow.Documents.NumberExistsAsync(partner.Id, numberNorm, null, ct).ConfigureAwait(false)));
-            if (numberTaken)
-            {
-                LeaveOut(path);
-                continue;
-            }
-
-            if (partner is null)
+            if (!partners.TryGetValue(parsed.PartnerFolder, out var partner))
             {
                 partner = IndexRebuild.NewPartner(parsed.PartnerFolder, now);
                 partners[parsed.PartnerFolder] = partner;
@@ -79,7 +65,20 @@ internal sealed class FileRegistration(
         await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
         return new RegisterReport(registered, remaining, inTrash);
 
-        void LeaveOut(string path) => (IsInTrash(path) ? inTrash : remaining).Add(path);
+        // Not archived yet, nor earlier in this batch.
+        async Task<bool> IsNewContentAsync(string sha256) =>
+            hashes.Add(sha256) && await uow.Documents.GetByHashAsync(sha256, ct).ConfigureAwait(false) is null;
+
+        // The partner already has this number, in the archive or earlier in this batch. Not checked in the trash.
+        async Task<bool> IsNumberTakenAsync(ArchivePath parsed)
+        {
+            if (parsed.InTrash)
+                return false;
+            var numberNorm = TextNormalizer.NormalizeNumber(parsed.DocNumber);
+            return !numbers.Add((parsed.PartnerFolder.ToUpperInvariant(), numberNorm))
+                || (partners.TryGetValue(parsed.PartnerFolder, out var partner) && partner.Id > 0
+                    && await uow.Documents.NumberExistsAsync(partner.Id, numberNorm, null, ct).ConfigureAwait(false));
+        }
 
         bool IsInTrash(string path) =>
             ArchiveNaming.IsInArchive(archiveRoot, path)

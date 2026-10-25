@@ -40,7 +40,7 @@ public sealed class BackendWiringTests : IDisposable
         await db.Database.OpenConnectionAsync(Ct); // opened by EF, so the interceptor runs
         Assert.Equal("wal", Pragma(db, "journal_mode"));
         Assert.Equal(1L, Pragma(db, "synchronous")); // 1 = NORMAL
-        Assert.Equal(-20000L, Pragma(db, "cache_size"));
+        Assert.Equal(-64000L, Pragma(db, "cache_size"));
         Assert.Equal(2L, Pragma(db, "temp_store")); // 2 = MEMORY
     }
 

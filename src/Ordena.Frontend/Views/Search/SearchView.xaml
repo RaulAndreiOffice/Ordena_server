@@ -188,11 +188,12 @@
                           behaviors:DataGridBehavior.SortBy="{Binding SortBy}"
                           behaviors:DataGridBehavior.SortDescending="{Binding SortDescending}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" SortMemberPath="IssueDate" Width="110"
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Date}" SortMemberPath="IssueDate" Width="120"
                                             Binding="{Binding IssueDate, StringFormat=d}" />
-                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" SortMemberPath="Partner" Width="2*"
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Partner}" SortMemberPath="Partner" Width="2*" MinWidth="160"
                                             Binding="{Binding PartnerName}" />
-                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Number}" SortMemberPath="DocNumber" Width="*"
+                        <!-- Wide enough for a number like "FAC-2026-00123" at the default window size. -->
+                        <DataGridTextColumn Header="{x:Static res:Strings.Column_Number}" SortMemberPath="DocNumber" Width="*" MinWidth="150"
                                             Binding="{Binding DocNumber}" />
                         <DataGridTextColumn Header="{x:Static res:Strings.Column_Type}" SortMemberPath="Type" Width="210"
                                             Binding="{Binding Type, Converter={StaticResource Localized}}" />

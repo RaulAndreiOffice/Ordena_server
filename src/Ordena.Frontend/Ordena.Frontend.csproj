@@ -9,10 +9,23 @@
     <AssemblyName>Ordena</AssemblyName>
     <RootNamespace>Ordena.Frontend</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Ordena's mark (Logo.Mark), rendered at 16-256 px: Explorer, the Start menu and shortcuts show it. -->
+    <ApplicationIcon>Resources\ordena.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- Smart App Control blocks an unsigned Ordena.exe on the dev PC. Debug builds run as
-       "dotnet Ordena.dll" through the signed dotnet.exe instead; the Release exe is signed in step 6. -->
+  <!-- What the exe's Properties > Details show. The version is also the footer's and the installer's. -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Product>Ordena</Product>
+    <Company>mind2code.dev</Company>
+    <Copyright>© 2026 mind2code.dev</Copyright>
+    <Description>Ordena: invoice archive</Description>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!-- Smart App Control can block an unsigned Ordena.exe on the dev PC. Debug builds run as
+       "dotnet Ordena.dll" through the signed dotnet.exe instead; installer\build.ps1 signs the Release exe
+       once a code-signing certificate is set up (-CertThumbprint). -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>

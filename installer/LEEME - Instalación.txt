@@ -1,0 +1,25 @@
+ORDENA 1.0.0 - INSTALACIÓN
+==========================
+
+1. Haz doble clic en "OrdenaSetup-1.0.0.exe" y sigue los pasos.
+   No hace falta ser administrador: Ordena se instala solo para tu usuario.
+
+2. Si Windows muestra "Windows protegió tu PC":
+   pulsa "Más información" y después "Ejecutar de todas formas".
+   Aparece porque el programa todavía no está firmado digitalmente.
+
+3. La primera vez, Ordena pregunta el idioma y la carpeta de facturas.
+   - Si empiezas de cero, elige "Empezar de cero" y la carpeta donde guardarlas
+     (por ejemplo Documentos\Facturas).
+   - Si ya usabas Ordena en otro PC, elige "Ya tengo un archivo de facturas"
+     y la carpeta de ese archivo.
+
+Dónde están tus datos:
+  - Tus facturas: en la carpeta que elijas. Ordena guarda ahí también las copias
+    de seguridad (carpeta _backup).
+  - La base de datos y los ajustes: %LocalAppData%\Ordena
+
+Desinstalar (Configuración > Aplicaciones > Ordena) quita solo el programa:
+tus facturas y tu base de datos se quedan donde están.
+
+Actualizar: instala la nueva versión encima de esta. Tus datos se conservan.

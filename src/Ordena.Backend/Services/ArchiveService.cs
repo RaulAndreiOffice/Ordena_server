@@ -43,11 +43,9 @@ internal sealed class ArchiveService(
                 // Half is enough: files that were already missing before the move mustn't block it.
                 if (found * 2 < sample.Count)
                     return Result.Fail(ErrorCode.ArchiveMismatch, $"found {found} of {sample.Count}");
-
-                await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, newRoot, ct).ConfigureAwait(false);
-                await uow.SaveChangesAsync(ct).ConfigureAwait(false);
             }
 
+            await SaveRootAsync(newRoot, ct).ConfigureAwait(false);
             logger.LogInformation("The archive is now at {Root}", newRoot);
             await recovery.RecoverAsync(newRoot, ct).ConfigureAwait(false);
             return Result.Ok();
@@ -66,9 +64,9 @@ internal sealed class ArchiveService(
         RequireAbsolute(oldRoot, nameof(oldRoot));
         return Task.Run(async () =>
         {
-            var root = await GetRootAsync(ct).ConfigureAwait(false);
+            var root = await ArchiveRoot.GetAsync(uowFactory, storage, ct).ConfigureAwait(false);
             if (!root.IsSuccess)
-                return Result.Fail<int>(root.Error.Value, root.Detail);
+                return root.FailAs<int>();
             if (ArchiveNaming.AreNested(root.Value, oldRoot))
                 return Result.Fail<int>(ErrorCode.InvalidArchiveFolder, oldRoot);
 
@@ -116,12 +114,12 @@ internal sealed class ArchiveService(
             backup.RestoreFrom(file);
             await migrator.MigrateAsync(ct).ConfigureAwait(false); // the backup may come from an older version
 
+            // The backup still names the folder of the PC it was made on.
+            await SaveRootAsync(archiveRoot, ct).ConfigureAwait(false);
+
             int count;
             await using (var uow = uowFactory.Create())
             {
-                // The backup still names the folder of the PC it was made on.
-                await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, archiveRoot, ct).ConfigureAwait(false);
-                await uow.SaveChangesAsync(ct).ConfigureAwait(false);
                 count = await uow.Documents.CountAsync(new DocumentSearch(), ct).ConfigureAwait(false);
             }
 
@@ -146,9 +144,7 @@ internal sealed class ArchiveService(
             if (report.DocumentCount == 0)
                 return Result.Ok(report);
 
-            await using var uow = uowFactory.Create();
-            await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, archiveRoot, CancellationToken.None).ConfigureAwait(false);
-            await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
+            await SaveRootAsync(archiveRoot, CancellationToken.None).ConfigureAwait(false);
             return Result.Ok(report);
         }, ct);
     }
@@ -156,9 +152,9 @@ internal sealed class ArchiveService(
     private async Task<Result<ArchiveMoveReport>> MoveCoreAsync(
         string newRoot, IProgress<ArchiveProgress>? progress, CancellationToken ct)
     {
-        var root = await GetRootAsync(ct).ConfigureAwait(false);
+        var root = await ArchiveRoot.GetAsync(uowFactory, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Result.Fail<ArchiveMoveReport>(root.Error.Value, root.Detail);
+            return root.FailAs<ArchiveMoveReport>();
         var oldRoot = root.Value;
 
         if (ArchiveNaming.AreNested(oldRoot, newRoot))
@@ -208,7 +204,7 @@ internal sealed class ArchiveService(
                 if (!copied.IsSuccess)
                 {
                     logger.LogWarning("Moving the archive stopped at {File}: {Error} {Detail}", file.Path, copied.Error, copied.Detail);
-                    return Result.Fail<ArchiveMoveReport>(copied.Error.Value, copied.Detail);
+                    return copied.FailAs<ArchiveMoveReport>();
                 }
 
                 copies.Add(target);
@@ -216,11 +212,7 @@ internal sealed class ArchiveService(
                 progress?.Report(new ArchiveProgress(i + 1, files.Count, done, total));
             }
 
-            await using (var uow = uowFactory.Create())
-            {
-                await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, newRoot, CancellationToken.None).ConfigureAwait(false);
-                await uow.SaveChangesAsync(CancellationToken.None).ConfigureAwait(false);
-            }
+            await SaveRootAsync(newRoot, CancellationToken.None).ConfigureAwait(false);
             switched = true;
         }
         finally
@@ -240,7 +232,7 @@ internal sealed class ArchiveService(
     {
         var read = await storage.ReadAsync(source, CancellationToken.None).ConfigureAwait(false);
         if (!read.IsSuccess)
-            return Result.Fail(read.Error.Value, read.Detail);
+            return read;
 
         return await storage.WriteVerifiedAsync(
             target, read.Value, Sha256Hasher.Compute(read.Value), CancellationToken.None).ConfigureAwait(false);
@@ -255,10 +247,12 @@ internal sealed class ArchiveService(
         }
     }
 
-    private async Task<Result<string>> GetRootAsync(CancellationToken ct)
+    // From now on the archive is at root.
+    private async Task SaveRootAsync(string root, CancellationToken ct)
     {
         await using var uow = uowFactory.Create();
-        return await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
+        await uow.Settings.SetAsync(SettingKeys.ArchiveRoot, root, ct).ConfigureAwait(false);
+        await uow.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
     private static void RequireAbsolute(string path, string name)

@@ -20,7 +20,7 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
 {
     private readonly IPartnerService _partners;
     private readonly ILocalizer _localizer;
-    private CancellationTokenSource? _partnerLookup;
+    private readonly Debouncer _partnerLookup = new();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIssued), nameof(PartnerLabel), nameof(PaidLabel))]
@@ -135,7 +135,7 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
     // doesn't: a new document is pending until the user says otherwise, so none is forgotten.
     public void Reset()
     {
-        _partnerLookup?.Cancel();
+        _partnerLookup.Cancel();
         PartnerName = "";
         DocNumber = "";
         IssueDate = null;
@@ -150,27 +150,16 @@ public sealed partial class DocumentFormViewModel : ObservableValidator
 
     // After a pause in typing: the suggestions, and whether the name is an existing partner's.
     // A newer keystroke cancels an older lookup, so a slow answer never overwrites a newer one.
-    private async Task LookUpPartnerAsync(string text)
+    private Task LookUpPartnerAsync(string text) => _partnerLookup.RunAsync(SuggestionDelay, async ct =>
     {
-        _partnerLookup?.Cancel();
-        var lookup = _partnerLookup = new CancellationTokenSource();
-        try
-        {
-            if (SuggestionDelay > TimeSpan.Zero)
-                await Task.Delay(SuggestionDelay, lookup.Token);
+        var suggestions = await _partners.SuggestAsync(text, 10, ct);
+        var similar = await _partners.FindSimilarAsync(text, ct);
+        if (ct.IsCancellationRequested)
+            return;
 
-            var suggestions = await _partners.SuggestAsync(text, 10, lookup.Token);
-            var similar = await _partners.FindSimilarAsync(text, lookup.Token);
-            if (lookup.IsCancellationRequested)
-                return;
-
-            Suggestions = suggestions.Select(p => p.Name).ToList();
-            SimilarHint = similar is not null && similar.Name != text.Trim()
-                ? _localizer.Format("Form_SavedAs", similar.Name)
-                : null;
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
+        Suggestions = suggestions.Select(p => p.Name).ToList();
+        SimilarHint = similar is not null && similar.Name != text.Trim()
+            ? _localizer.Format("Form_SavedAs", similar.Name)
+            : null;
+    });
 }

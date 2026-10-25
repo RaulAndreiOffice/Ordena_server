@@ -19,4 +19,11 @@ internal static class ArchiveRoot
             ? Result.Ok(root)
             : Result.Fail<string>(ErrorCode.ArchiveUnavailable, root);
     }
+
+    // The same, in a unit of work of its own.
+    public static async Task<Result<string>> GetAsync(IUnitOfWorkFactory uowFactory, IFileStorage storage, CancellationToken ct)
+    {
+        await using var uow = uowFactory.Create();
+        return await GetAsync(uow, storage, ct).ConfigureAwait(false);
+    }
 }

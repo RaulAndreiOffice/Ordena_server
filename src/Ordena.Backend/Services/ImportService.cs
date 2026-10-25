@@ -38,7 +38,7 @@ internal sealed class ImportService(
         {
             var pdf = await ReadPdfAsync(sourcePath, ct).ConfigureAwait(false);
             if (!pdf.IsSuccess)
-                return Result.Fail(pdf.Error.Value, pdf.Detail);
+                return pdf;
 
             await using var uow = uowFactory.Create();
             return await FindArchivedAsync(uow, pdf.Value.Sha256, ct).ConfigureAwait(false) ?? Result.Ok();
@@ -50,29 +50,29 @@ internal sealed class ImportService(
         // The archive gets exactly these bytes: the ones checked and hashed here.
         var pdf = await ReadPdfAsync(request.SourcePath, ct).ConfigureAwait(false);
         if (!pdf.IsSuccess)
-            return Fail(pdf.Error.Value, pdf.Detail);
+            return pdf.FailAs<ImportResult>();
         var (content, sha256) = pdf.Value;
 
         await using var uow = uowFactory.Create();
 
         var root = await ArchiveRoot.GetAsync(uow, storage, ct).ConfigureAwait(false);
         if (!root.IsSuccess)
-            return Fail(root.Error.Value, root.Detail);
+            return root.FailAs<ImportResult>();
         var archiveRoot = root.Value;
 
         var archived = await FindArchivedAsync(uow, sha256, ct).ConfigureAwait(false);
         if (archived is not null && !archived.IsSuccess)
-            return Fail(archived.Error.Value, archived.Detail);
+            return archived.FailAs<ImportResult>();
 
         var partner = await partnerResolver.GetOrCreateAsync(uow, request.PartnerName, ct).ConfigureAwait(false);
         if (!partner.IsSuccess)
-            return Fail(partner.Error.Value, partner.Detail);
+            return partner.FailAs<ImportResult>();
 
         var docNumber = request.DocNumber.Trim();
         var docNumberNorm = TextNormalizer.NormalizeNumber(docNumber);
         if (!request.ConfirmDuplicate &&
             await uow.Documents.NumberExistsAsync(partner.Value.Id, docNumberNorm, null, ct).ConfigureAwait(false))
-            return Fail(ErrorCode.DuplicateNumber, docNumber);
+            return Result.Fail<ImportResult>(ErrorCode.DuplicateNumber, docNumber);
 
         var now = clock.UtcNow;
         var document = new Document
@@ -94,7 +94,7 @@ internal sealed class ImportService(
         var moved = await archiveMover.ImportAsync(uow, document, request.SourcePath, content, archiveRoot, ct)
             .ConfigureAwait(false);
         if (!moved.IsSuccess)
-            return Fail(moved.Error.Value, moved.Detail);
+            return moved.FailAs<ImportResult>();
 
         // The import is committed, so this step is no longer cancellable.
         var sourceDeleted = !request.KeepSource
@@ -108,7 +108,7 @@ internal sealed class ImportService(
     {
         var read = await storage.ReadAsync(path, ct).ConfigureAwait(false);
         if (!read.IsSuccess)
-            return Result.Fail<PdfFile>(read.Error.Value, read.Detail);
+            return read.FailAs<PdfFile>();
 
         var content = read.Value;
         if (content.Length == 0)
@@ -129,9 +129,6 @@ internal sealed class ImportService(
         var error = existing.DeletedAt is null ? ErrorCode.AlreadyArchived : ErrorCode.AlreadyInTrash;
         return Result.Fail(error, existing.Id.ToString(CultureInfo.InvariantCulture));
     }
-
-    private static Result<ImportResult> Fail(ErrorCode error, string? detail) =>
-        Result.Fail<ImportResult>(error, detail);
 
     private sealed record PdfFile(byte[] Content, string Sha256);
 }
